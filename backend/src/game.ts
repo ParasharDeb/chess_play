@@ -14,23 +14,21 @@ export class Game {
         this.player1.send(JSON.stringify({
             type:INIT_GAME,
             payload:{
-                color:"White"}
+                color:"White"
+            }
         }))
         this.player2.send(JSON.stringify({
             type:INIT_GAME,
             payload:{
-                color:"Black"}
+                color:"Black"
+            }
         }))
     }
     makeMove(socket:WebSocket,move:{from:string,to:string})  {
-        if(this.board.moves.length%2===0 && socket!=this.player1){
-            return
-        }
-        if(this.board.move.length%2===1 && socket!=this.player2){
-            return
-        }
+
         try{
             this.board.move(move)
+            console.log(move)
         }
         catch(e){
             return
@@ -44,14 +42,15 @@ export class Game {
             }))
             return;
         }
-        if(this.board.moves.length%2===0){
-            this.player2.emit(JSON.stringify({
+        if(this.board.moves().length%2===0){
+            this.player2.send(JSON.stringify({
                 type:MOVE,
                 payload:move
             }))
 
         }else{
-            this.player1.emit(JSON.stringify({
+            console.log("did not reach here")
+            this.player1.send(JSON.stringify({
                 type:MOVE,
                 payload:move 
             }))

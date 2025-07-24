@@ -22,18 +22,21 @@ export class GameManager{
     private messageHandler(ws:WebSocket){
         ws.on('message',(data)=>{
             const message=JSON.parse(data.toString());
-            if(message===INIT_GAME){
+            if(message.type===INIT_GAME){
+                console.log("hi")
                 if(this.pendinguser){
                     const game= new Game(this.pendinguser,ws)
                     this.games.push(game)
                     this.pendinguser=null
                 }
                 else{
-                this.pendinguser=ws
+                    this.pendinguser=ws
                 }
             }
-            if(message==MOVE){
+            if(message.type==MOVE){
+                console.log("move")
                 const game=this.games.find(game=>game.player1==ws || game.player2==ws)
+                console.log("found game")
                 if(game){
                     game.makeMove(ws,message.move)
                 }
