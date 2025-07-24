@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 
-export class game {
+export class Game {
     private player1:WebSocket
     private player2:WebSocket
     private board:string
