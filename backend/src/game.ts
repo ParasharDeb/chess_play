@@ -23,6 +23,12 @@ export class Game {
         }))
     }
     makeMove(socket:WebSocket,move:{from:string,to:string})  {
+        if(this.board.moves.length%2===0 && socket!=this.player1){
+            return
+        }
+        if(this.board.move.length%2===1 && socket!=this.player2){
+            return
+        }
         try{
             this.board.move(move)
         }
