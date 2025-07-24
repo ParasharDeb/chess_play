@@ -1,13 +1,13 @@
 import { WebSocket } from "ws"
-import { INIT_GAME } from "./message"
+import { INIT_GAME, MOVE } from "./message"
 import { Game } from "./game"
 
 export class GameManager{
-    private game:Game[]
+    private games:Game[]
     private pendinguser:WebSocket | null
     private user: WebSocket[]
     constructor(){
-        this.game=[]
+        this.games=[]
         this.pendinguser=null
         this.user=[]
     }
@@ -25,11 +25,17 @@ export class GameManager{
             if(message===INIT_GAME){
                 if(this.pendinguser){
                     const game= new Game(this.pendinguser,ws)
-                    this.game.push(game)
+                    this.games.push(game)
                     this.pendinguser=null
                 }
                 else{
                 this.pendinguser=ws
+                }
+            }
+            if(message==MOVE){
+                const game=this.games.find(game=>game.player1==ws || game.player2==ws)
+                if(game){
+                    game.makeMove(ws,message.move)
                 }
             }
         })
