@@ -1,6 +1,7 @@
 export default function GamePage(){
     return(
-        <div>
+        <div className="justify-center flex">
+            
             Game
         </div>
     )
