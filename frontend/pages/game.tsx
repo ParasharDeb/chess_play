@@ -2,31 +2,12 @@ import { Chessboard, type PieceDropHandlerArgs, type SquareHandlerArgs } from 'r
 import { Chess, type Square } from 'chess.js';
 import { useRef, useState } from 'react';
 export default function GamePage() {
+    //TODO: SHOULD CLEAN UP THIS PAGE SHOULD HAVE ANOTHER FILE WITH ALL THE FUNCTIONS
     const chessGameRef = useRef(new Chess());
-    console.log(chessGameRef.current)
     const chessGame = chessGameRef.current;//this is a complex object
     const [chessPosition, setChessPosition] = useState(chessGame.fen());//exact postion of all the pieces in form of a string
     const [moveFrom, setMoveFrom] = useState('');
     const [optionSquares, setOptionSquares] = useState({});
-    // // make a random "CPU" move has to change 
-    // function makeRandomMove() {
-    //   // get all possible moves`
-    //   const possibleMoves = chessGame.moves();
-
-    //   // exit if the game is over
-    //   if (chessGame.isGameOver()) {
-    //     return;
-    //   }
-
-    //   // pick a random move
-    //   const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-
-    //   // make the move
-    //   chessGame.move(randomMove);
-
-    //   // update the position state
-    //   setChessPosition(chessGame.fen());
-    // }
 
     // get the move options for a square to show valid moves
     function getMoveOptions(square:Square) {
@@ -66,6 +47,7 @@ export default function GamePage() {
       // return true to indicate that there are move options
       return true;
     }
+    //what happens when square is clicked
     function onSquareClick({
       square,
       piece
@@ -131,8 +113,7 @@ export default function GamePage() {
       setMoveFrom('');
       setOptionSquares({});
     }
-
-    // handle piece drop
+     // handle piece drop
     function onPieceDrop({
       sourceSquare,
       targetSquare
@@ -157,8 +138,7 @@ export default function GamePage() {
         setMoveFrom('');
         setOptionSquares({});
 
-        // make random cpu move after a short delay
-        setTimeout(makeRandomMove, 500);
+        
 
         // return true as the move was successful
         return true;
@@ -167,7 +147,6 @@ export default function GamePage() {
         return false;
       }
     }
-
     // set the chessboard options
     const chessboardOptions = {
       onPieceDrop,
@@ -180,8 +159,18 @@ export default function GamePage() {
     // render the chessboard
     return (
         <div className="w-screen h-screen flex items-center justify-center">
-            <div className="w-80 h-80">
-                <Chessboard options={{ ...chessboardOptions, boardStyle: { width: 320 } }} />
+            <div className='flex items-start gap-26'>
+                <div>
+                    <Chessboard options={{ ...chessboardOptions, boardStyle: { width: 920 } }} />
+                </div>
+                <div className='flex items-center justify-center h-full w-full'>
+                     <button className='bg-red-500 text-white px-4 py-2 rounded'
+                      onClick={()=>{/*logic to end the game should be here*/}}
+                    
+                    > 
+                        Resign
+                    </button>
+                </div>
             </div>
         </div>
     );

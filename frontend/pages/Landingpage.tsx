@@ -1,6 +1,6 @@
 export default function LandingPage(){
     return(
-        <div>
+        <div className="bg-red-100">
             Landing Page
         </div>
     )
