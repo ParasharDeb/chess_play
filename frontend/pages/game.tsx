@@ -3,29 +3,30 @@ import { Chess, type Square } from 'chess.js';
 import { useRef, useState } from 'react';
 export default function GamePage() {
     const chessGameRef = useRef(new Chess());
-    const chessGame = chessGameRef.current;
-    const [chessPosition, setChessPosition] = useState(chessGame.fen());
+    console.log(chessGameRef.current)
+    const chessGame = chessGameRef.current;//this is a complex object
+    const [chessPosition, setChessPosition] = useState(chessGame.fen());//exact postion of all the pieces in form of a string
     const [moveFrom, setMoveFrom] = useState('');
     const [optionSquares, setOptionSquares] = useState({});
-    // make a random "CPU" move
-    function makeRandomMove() {
-      // get all possible moves`
-      const possibleMoves = chessGame.moves();
+    // // make a random "CPU" move has to change 
+    // function makeRandomMove() {
+    //   // get all possible moves`
+    //   const possibleMoves = chessGame.moves();
 
-      // exit if the game is over
-      if (chessGame.isGameOver()) {
-        return;
-      }
+    //   // exit if the game is over
+    //   if (chessGame.isGameOver()) {
+    //     return;
+    //   }
 
-      // pick a random move
-      const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    //   // pick a random move
+    //   const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
-      // make the move
-      chessGame.move(randomMove);
+    //   // make the move
+    //   chessGame.move(randomMove);
 
-      // update the position state
-      setChessPosition(chessGame.fen());
-    }
+    //   // update the position state
+    //   setChessPosition(chessGame.fen());
+    // }
 
     // get the move options for a square to show valid moves
     function getMoveOptions(square:Square) {
@@ -125,8 +126,6 @@ export default function GamePage() {
       // update the position state
       setChessPosition(chessGame.fen());
 
-      // make random cpu move after a short delay
-      setTimeout(makeRandomMove, 300);
 
       // clear moveFrom and optionSquares
       setMoveFrom('');
