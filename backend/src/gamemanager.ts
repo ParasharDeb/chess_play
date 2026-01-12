@@ -1,44 +1,42 @@
-import { WebSocket } from "ws"
-import { INIT_GAME, MOVE } from "./message"
-import { Game } from "./game"
-
+import { WebSocket } from "ws";
+import { Game } from "./game";
+import { INIT_GAME, MOVE } from "./message";
 export class GameManager{
+    private waitingplayer:WebSocket|null;
     private games:Game[]
-    private pendinguser:WebSocket | null
-    private user: WebSocket[]
+    private users:WebSocket[]
     constructor(){
-        this.games=[]
-        this.pendinguser=null
-        this.user=[]
+        this.games=[]    // should not be a in memeory varibale
+        this.waitingplayer=null
+        this.users=[]    //didnt understand why this is empty**
     }
-    addUser(ws:WebSocket){
-        this.user.push(ws)
-        this.messageHandler(ws)
+    addUser(socket:WebSocket){
+        this.users.push(socket);
+        this.addHandler(socket)
     }
-    removeUser(ws:WebSocket){
-        this.user=this.user.filter(user=>user!==ws)
-        //logic to stop the game here cause user disconnected
+    removeUser(socket:WebSocket){
+        this.users=this.users.filter(user=>user!== socket)
     }
-    private messageHandler(ws:WebSocket){
-        ws.on('message',(data)=>{
-            const message=JSON.parse(data.toString());
-            if(message.type===INIT_GAME){
-                console.log("hi")
-                if(this.pendinguser){
-                    const game= new Game(this.pendinguser,ws)
-                    this.games.push(game)
-                    this.pendinguser=null
+    private addHandler(socket:WebSocket){
+        socket.on("message",(data)=>{
+            const message=JSON.parse(data.toString()) // here didnt understand what data gives us is data a string an object??
+
+            if(message.type==INIT_GAME){
+                if(this.waitingplayer){
+                    const game = new Game(this.waitingplayer,socket)
+                    this.games.push(game);
+                    this.waitingplayer=null
+                    
                 }
                 else{
-                    this.pendinguser=ws
+                    this.waitingplayer=socket
+                    
                 }
             }
             if(message.type==MOVE){
-                console.log("move")
-                const game=this.games.find(game=>game.player1==ws || game.player2==ws)
-                console.log("found game")
+                const game = this.games.find(g=>g.player1===socket || g.player2===socket)
                 if(game){
-                    game.makeMove(ws,message.move)
+                    game.makeMove(socket,message.move)
                 }
             }
         })
