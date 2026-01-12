@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 export default function GamePage() {
     //TODO: SHOULD CLEAN UP THIS PAGE SHOULD HAVE ANOTHER FILE WITH ALL THE FUNCTIONS
     const chessGameRef = useRef(new Chess());
+
     const chessGame = chessGameRef.current;//this is a complex object
     const [chessPosition, setChessPosition] = useState(chessGame.fen());//exact postion of all the pieces in form of a string
     const [moveFrom, setMoveFrom] = useState('');
