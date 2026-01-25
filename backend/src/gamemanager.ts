@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import { Game } from "./game";
-import { INIT_GAME, MOVE } from "./message";
+import { INIT_GAME, MOVE, WAITING } from "./message";
 export class GameManager{
     private waitingplayer:WebSocket|null;
     private games:Game[]
@@ -33,10 +33,8 @@ export class GameManager{
                     this.waitingplayer=socket
                     socket.send(
                         JSON.stringify({
-                            "type":INIT_GAME,
-                            "payload":{
-                            color:"white"
-                            }
+                            "type":WAITING,
+                            
                         }))
                 }
             }

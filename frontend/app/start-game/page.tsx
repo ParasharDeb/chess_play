@@ -1,8 +1,8 @@
 "use client"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react";
-import { INIT_GAME } from "../constants";
-import { ECDH } from "crypto";
+import { INIT_GAME, WAITING } from "../constants";
+
 export default function Startgame(){
     const router= useRouter();
     const socketref = useRef<WebSocket|null>(null)
@@ -13,6 +13,10 @@ export default function Startgame(){
         websocket.onmessage=(event)=>{
             const message= JSON.parse(event.data)
             console.log(message)
+            if(message.type==WAITING){
+                router.push("/waiting")
+                
+            }
             const color = message.payload.color 
             
             if(color=="black"){

@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { Chessboard, PieceHandlerArgs, type PieceDropHandlerArgs, type SquareHandlerArgs } from 'react-chessboard';
 import {Chess} from "chess.js"
 export default function Multiplayer(){
-     const chessGameRef = useRef(new Chess());
+    const chessGameRef = useRef(new Chess());
     const chessGame = chessGameRef.current;
 
     // track the current position of the chess game in state
@@ -21,6 +21,7 @@ export default function Multiplayer(){
 
       // try to make the move according to chess.js logic
       try {
+
         chessGame.move({
           from: sourceSquare,
           to: targetSquare,
@@ -45,12 +46,6 @@ export default function Multiplayer(){
       return piece.pieceType[0] === 'w';
     }
 
-    // allow black to only drag black pieces
-    function canDragPieceBlack({
-      piece
-    }: PieceHandlerArgs) {
-      return piece.pieceType[0] === 'b';
-    }
 
     // set the chessboard options for white's perspective
     const whiteBoardOptions = {
@@ -61,8 +56,6 @@ export default function Multiplayer(){
       id: 'multiplayer-white'
     };
 
-
-    //Should have conditional rendering here like if the response from ws server of the player is black then he sees black and vice verse 
     return <div style={{
       display: 'flex',
       gap: '20px',
