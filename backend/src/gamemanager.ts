@@ -19,9 +19,10 @@ export class GameManager{
     }
     private addHandler(socket:WebSocket){
         socket.on("message",(data)=>{
-            const message=JSON.parse(data.toString()) // here didnt understand what data gives us is data a string an object??
+            const message=JSON.parse(data.toString()) 
 
             if(message.type==INIT_GAME){
+                console.log("reacher here")
                 if(this.waitingplayer){
                     const game = new Game(this.waitingplayer,socket)
                     this.games.push(game);
@@ -30,7 +31,13 @@ export class GameManager{
                 }
                 else{
                     this.waitingplayer=socket
-                    
+                    socket.send(
+                        JSON.stringify({
+                            "type":INIT_GAME,
+                            "payload":{
+                            color:"white"
+                            }
+                        }))
                 }
             }
             if(message.type==MOVE){
