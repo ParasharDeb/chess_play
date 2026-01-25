@@ -1,3 +1,4 @@
+'use client'
 import { useRef, useState } from "react";
 import { Chessboard, PieceHandlerArgs, type PieceDropHandlerArgs, type SquareHandlerArgs } from 'react-chessboard';
 import {Chess} from "chess.js"
@@ -60,14 +61,6 @@ export default function Multiplayer(){
       id: 'multiplayer-white'
     };
 
-    // set the chessboard options for black's perspective
-    const blackBoardOptions = {
-      canDragPiece: canDragPieceBlack,
-      position: chessPosition,
-      onPieceDrop,
-      boardOrientation: 'black' as const,
-      id: 'multiplayer-black'
-    };
 
     //Should have conditional rendering here like if the response from ws server of the player is black then he sees black and vice verse 
     return <div style={{
@@ -88,15 +81,7 @@ export default function Multiplayer(){
           </div>
         </div>
 
-        <div>
-          <p style={{
-          textAlign: 'center'
-        }}>Black&apos;s perspective</p>
-          <div style={{
-          maxWidth: '400px'
-        }}>
-            <Chessboard options={blackBoardOptions} />
-          </div>
-        </div>
+       
+        
       </div>;
 }
