@@ -1,33 +1,28 @@
-'use client'
+"use client";
+
 import { useRef, useState } from "react";
-import { Chessboard, PieceHandlerArgs, type PieceDropHandlerArgs } from 'react-chessboard';
 import { Chess } from "chess.js";
-import { useParams } from "next/navigation";
+import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs } from "react-chessboard";
 
-export default function Multiplayer() {
-  const { roomId } = useParams();
-
+export default function ChessDemo() {
+  // maintain game instance across renders
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
 
-  // track the current position of the chess game in state
+  // board position state
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
 
-  // handle piece drop
-  function onPieceDrop({
-    sourceSquare,
-    targetSquare,
-  }: PieceDropHandlerArgs) {
-    if (!targetSquare) {
-      return false;
-    }
+  function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
+    if (!targetSquare) return false;
 
     try {
-      chessGame.move({
+      const result = chessGame.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: "q",
       });
+
+      if (!result) return false;
 
       setChessPosition(chessGame.fen());
       return true;
@@ -36,12 +31,22 @@ export default function Multiplayer() {
     }
   }
 
-  // allow black to only drag black pieces
+  function canDragPieceWhite({ piece }: PieceHandlerArgs) {
+    return piece.pieceType[0] === "w";
+  }
+
   function canDragPieceBlack({ piece }: PieceHandlerArgs) {
     return piece.pieceType[0] === "b";
   }
 
-  // chessboard options for black perspective
+  const whiteBoardOptions = {
+    canDragPiece: canDragPieceWhite,
+    position: chessPosition,
+    onPieceDrop,
+    boardOrientation: "white" as const,
+    id: "multiplayer-white",
+  };
+
   const blackBoardOptions = {
     canDragPiece: canDragPieceBlack,
     position: chessPosition,
@@ -51,21 +56,18 @@ export default function Multiplayer() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: "20px",
-        justifyContent: "center",
-        flexWrap: "wrap",
-        padding: "10px",
-      }}
-    >
+    <div style={{ display: "flex", gap: "20px", justifyContent: "center", flexWrap: "wrap", padding: "10px" }}>
+      
+
       <div>
         <p style={{ textAlign: "center" }}>Black&apos;s perspective</p>
-        <p>ROOM: {roomId}</p>
-
         <div style={{ maxWidth: "400px" }}>
-          <Chessboard options={blackBoardOptions} />
+          <Chessboard
+            options={{
+              position: fenFromServer,
+              boardOrientation: "black",
+            }}
+          />
         </div>
       </div>
     </div>

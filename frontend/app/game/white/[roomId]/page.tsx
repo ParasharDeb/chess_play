@@ -1,63 +1,66 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Chessboard, PieceHandlerArgs, type PieceDropHandlerArgs } from "react-chessboard";
+import { useRef, useState } from "react";
 import { Chess } from "chess.js";
-import { useParams } from "next/navigation";
+import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs } from "react-chessboard";
 
-
-export default function Multiplayer() {
-  const { roomId } = useParams();
-
+export default function ChessDemo() {
+  // maintain game instance across renders
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
 
-
+  // board position state
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
 
-  
-
-  // ✅ When white moves
   function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
     if (!targetSquare) return false;
 
-    const move = {
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: "q",
-    };
+    try {
+      const result = chessGame.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: "q",
+      });
 
-    
+      if (!result) return false;
+
+      setChessPosition(chessGame.fen());
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function canDragPieceWhite({ piece }: PieceHandlerArgs) {
-    return piece.pieceType.startsWith("w");
+    return piece.pieceType[0] === "w";
   }
 
+  function canDragPieceBlack({ piece }: PieceHandlerArgs) {
+    return piece.pieceType[0] === "b";
+  }
+
+  const whiteBoardOptions = {
+    canDragPiece: canDragPieceWhite,
+    position: chessPosition,
+    onPieceDrop,
+    boardOrientation: "white" as const,
+    id: "multiplayer-white",
+  };
+
+  const blackBoardOptions = {
+    canDragPiece: canDragPieceBlack,
+    position: chessPosition,
+    onPieceDrop,
+    boardOrientation: "black" as const,
+    id: "multiplayer-black",
+  };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: "20px",
-        justifyContent: "center",
-        flexWrap: "wrap",
-        padding: "10px",
-      }}
-    >
+    <div style={{ display: "flex", gap: "20px", justifyContent: "center", flexWrap: "wrap", padding: "10px" }}>
       <div>
         <p style={{ textAlign: "center" }}>White&apos;s perspective</p>
-        <p>Room: {roomId}</p>
-
         <div style={{ maxWidth: "400px" }}>
-          <Chessboard
-            options={{
-              position: chessPosition,
-              onPieceDrop,
-              canDragPiece: canDragPieceWhite,
-              boardOrientation: "white",
-              id: "multiplayer-white",
-            }}
-          />
+          <Chessboard options={whiteBoardOptions} />
         </div>
       </div>
     </div>
