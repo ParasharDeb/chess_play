@@ -1,80 +1,90 @@
-'use client'
-import { useRef, useState } from "react";
-import { Chessboard, PieceHandlerArgs, type PieceDropHandlerArgs, type SquareHandlerArgs } from 'react-chessboard';
-import {Chess} from "chess.js"
-export default function Multiplayer(){
-    const chessGameRef = useRef(new Chess());
-    const chessGame = chessGameRef.current;
+"use client";
 
-    // track the current position of the chess game in state
-    const [chessPosition, setChessPosition] = useState(chessGame.fen());
+import { useEffect, useRef, useState } from "react";
+import { Chessboard, PieceHandlerArgs, type PieceDropHandlerArgs } from "react-chessboard";
+import { Chess } from "chess.js";
+import { useParams } from "next/navigation";
+import { useWSStore } from "@/store/wsStore";
 
-    // handle piece drop
-    function onPieceDrop({
-      sourceSquare,
-      targetSquare
-    }: PieceDropHandlerArgs) {
-      // type narrow targetSquare potentially being null (e.g. if dropped off board)
-      if (!targetSquare) {
-        return false;
-      }
+export default function Multiplayer() {
+  const { roomId } = useParams();
 
-      // try to make the move according to chess.js logic
-      try {
+  const chessGameRef = useRef(new Chess());
+  const chessGame = chessGameRef.current;
 
-        chessGame.move({
-          from: sourceSquare,
-          to: targetSquare,
-          promotion: 'q' // always promote to a queen for example simplicity
-        });
+  const moves = useWSStore((s) => s.moves);
+  const sendMove = useWSStore((s) => s.sendMove);
 
-        // update the position state upon successful move to trigger a re-render of the chessboard
-        setChessPosition(chessGame.fen());
+  const [chessPosition, setChessPosition] = useState(chessGame.fen());
 
-        // return true as the move was successful
-        return true;
-      } catch {
-        // return false as the move was not successful
-        return false;
-      }
+  // ✅ Sync board whenever moves come from WebSocket
+  useEffect(() => {
+    chessGame.reset();
+
+    for (const move of moves) {
+      chessGame.move(move);
     }
 
-    // allow white to only drag white pieces
-    function canDragPieceWhite({
-      piece
-    }: PieceHandlerArgs) {
-      return piece.pieceType[0] === 'w';
-    }
+    setChessPosition(chessGame.fen());
+  }, [moves, chessGame]);
 
+  // ✅ When white moves
+  function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
+    if (!targetSquare) return false;
 
-    // set the chessboard options for white's perspective
-    const whiteBoardOptions = {
-      canDragPiece: canDragPieceWhite,
-      position: chessPosition,
-      onPieceDrop,
-      boardOrientation: 'white' as const,
-      id: 'multiplayer-white'
+    const move = {
+      from: sourceSquare,
+      to: targetSquare,
+      promotion: "q",
     };
 
-    return <div style={{
-      display: 'flex',
-      gap: '20px',
-      justifyContent: 'center',
-      flexWrap: 'wrap',
-      padding: '10px'
-    }}>
-        <div>
-          <p style={{
-          textAlign: 'center'
-        }}>White&apos;s perspective</p>
-          <div style={{
-          maxWidth: '400px'
-        }}>
-            <Chessboard options={whiteBoardOptions} />
-          </div>
-        </div>
+    try {
+      // validate locally first
+      const result = chessGame.move(move);
+      if (!result) return false;
 
-       
-        
-      </div>;
+      // update UI instantly
+      setChessPosition(chessGame.fen());
+
+      // send move to backend
+      sendMove(move);
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function canDragPieceWhite({ piece }: PieceHandlerArgs) {
+    return piece.pieceType.startsWith("w");
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "20px",
+        justifyContent: "center",
+        flexWrap: "wrap",
+        padding: "10px",
+      }}
+    >
+      <div>
+        <p style={{ textAlign: "center" }}>White&apos;s perspective</p>
+        <p>Room: {roomId}</p>
+
+        <div style={{ maxWidth: "400px" }}>
+          <Chessboard
+            options={{
+              position: chessPosition,
+              onPieceDrop,
+              canDragPiece: canDragPieceWhite,
+              boardOrientation: "white",
+              id: "multiplayer-white",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -1,21 +1,25 @@
 import { WebSocket } from "ws";
 import { INIT_GAME } from "./message";
 import { Chess } from "chess.js";
+import {randomUUID} from "crypto"
 export class Game{
     public player1:WebSocket
     public player2:WebSocket
     public board:Chess
     public starttime:Date
+    public id:string
     constructor(player1:WebSocket,player2:WebSocket){
         this.player1=player1,
         this.player2=player2
         this.board=new Chess()
         this.starttime=new Date()
+        this.id=randomUUID()
         this.player1.send(
             JSON.stringify({
                 "type":INIT_GAME,
                 "payload":{
-                    color:"white"
+                    color:"white",
+                    id:this.id
                 }
             })
         )
@@ -23,7 +27,8 @@ export class Game{
             JSON.stringify({
                 "type":INIT_GAME,
                 "payload":{
-                    color:"black"
+                    color:"black",
+                    id:this.id
                 }
             })
         )
