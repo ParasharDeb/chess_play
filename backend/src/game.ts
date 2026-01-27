@@ -7,6 +7,7 @@ export class Game{
     public player2:WebSocket
     public board:Chess
     public starttime:Date
+    public fen:String
     public id:string
     constructor(player1:WebSocket,player2:WebSocket){
         this.player1=player1,
@@ -14,6 +15,7 @@ export class Game{
         this.board=new Chess()
         this.starttime=new Date()
         this.id=randomUUID()
+        this.fen= this.board.fen()
         this.player1.send(
             JSON.stringify({
                 "type":INIT_GAME,
@@ -26,10 +28,9 @@ export class Game{
         this.player2.send(
             JSON.stringify({
                 "type":INIT_GAME,
-                "payload":{
-                    color:"black",
-                    id:this.id
-                }
+                "color":"black",
+                "id":this.id
+                
             })
         )
     }
@@ -50,11 +51,16 @@ export class Game{
         }
 
         //is the move valid (chess.js returns null for invalid moves)
-        try{
-            const result = this.board.move(move)}
-        catch(e){
-            console.log(e)
-        }
+        try {
+  const result = this.board.move(move);
+  if (!result) return; // optional: invalid move protection
+
+          
+  this.fen = this.board.fen();
+
+} catch (e) {
+  console.log(e);
+}
         
 
         //check if game is over
@@ -80,7 +86,8 @@ export class Game{
         opponent.send(
             JSON.stringify({
                 type: "opponent_move",
-                move: move
+                move: move,
+                fen: this.fen
             })
         )
     }
