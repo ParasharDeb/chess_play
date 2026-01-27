@@ -26,6 +26,7 @@ export const useWSStore = create<WSStore>((set, get) => ({
     ws.onclose = () => {
       console.log("WS Closed");
       set({ socket: null });
+      setTimeout(() => get().connect(), 2000); // for reconnection
     };
 
     set({ socket: ws });

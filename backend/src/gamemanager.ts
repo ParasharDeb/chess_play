@@ -27,7 +27,7 @@ export class GameManager{
                     const game = new Game(this.waitingplayer,socket)
                     this.games.push(game);
                     this.waitingplayer=null
-                    
+                    console.log("game started")
                 }
                 else{
                     this.waitingplayer=socket
@@ -36,6 +36,7 @@ export class GameManager{
                             "type":WAITING,
                             
                         }))
+                    console.log("waiting")
                 }
             }
             if(message.type==MOVE){
