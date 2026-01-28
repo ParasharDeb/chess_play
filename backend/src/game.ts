@@ -19,10 +19,9 @@ export class Game{
         this.player1.send(
             JSON.stringify({
                 "type":INIT_GAME,
-                "payload":{
-                    color:"white",
-                    id:this.id
-                }
+                "color":"white",
+                "id":this.id
+                
             })
         )
         this.player2.send(

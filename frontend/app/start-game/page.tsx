@@ -1,36 +1,100 @@
-'use client'
-import { useSocket } from "@/hooks/useSocket"
-import WaitingPage from "@/components/waitingpage";
-import { INIT_GAME } from "../constants";
-import { Chessboard } from "react-chessboard";
-import { useState } from "react";
-import { Chess } from "chess.js";
+"use client";
 
-export default function Game(){
-    const socket = useSocket();
-    const [chess,setchess]=useState(new Chess)
-    const [clicked,setclicked]=useState(false)
-    const [board,setboard]=useState<string>(chess.fen)
-    if(!socket) return  WaitingPage
-    const StartGame=()=>{
-        socket.send(JSON.stringify({
-            "type":INIT_GAME
-        }))
-        socket.onmessage=(event)=>{
-            const message=JSON.parse(event.data)
-            if(message.type=="opponent_move"){
-                setboard(message.fen)
-            }
-        }
+import { useSocket } from "@/hooks/useSocket";
+import { Chessboard } from "react-chessboard";
+import { useEffect, useRef, useState } from "react";
+import { Chess } from "chess.js";
+import type { PieceDropHandlerArgs } from "react-chessboard";
+
+export default function Game() {
+  const socket = useSocket();
+  const chessRef = useRef(new Chess());
+
+  const [fen, setFen] = useState(chessRef.current.fen());
+  const [color, setColor] = useState<"white" | "black" | null>(null);
+  const [started, setStarted] = useState(false);
+
+  // listen for messages
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+
+      if (message.type === "init_game") {
+        setColor(message.color);
+        setStarted(true);
+      }
+
+      if (message.type === "opponent_move") {
+        chessRef.current.load(message.fen);
+        setFen(message.fen);
+      }
+    };
+  }, [socket]);
+
+  function startGame() {
+    socket?.send(JSON.stringify({ type: "init_game" }));
+  }
+
+  function onDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
+    if (!started || !targetSquare) return false;
+    
+    socket?.send(
+      JSON.stringify({
+        type: "move",
+        move: {
+          from: sourceSquare,
+          to: targetSquare,
+        },
+      })
+    );
+    try {
+      const result = chessRef.current.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: "q",
+      });
+
+      if (!result) return false;
+
+      setFen(chessRef.current.fen());
+      return true;
+    } catch {
+      return false;
     }
-    return(
-        <div className="flex items-center justify-center h-screen w-screen gap-10">
-            <div className="w-200 h-200">
-                <Chessboard/>
-            </div>
-            <button className="bg-white text-black rounded-full cursor-pointer px-8 py-4" onClick={StartGame}>
-                Play
-            </button>
+  }
+
+  if (!socket) {
+    return (
+      <div className="flex justify-center items-center h-screen text-white">
+        Connecting to server...
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col justify-center items-center h-screen bg-black gap-6">
+      {!started ? (
+        <button
+          onClick={startGame}
+          className="px-6 py-3 bg-white text-black rounded-lg font-semibold"
+        >
+          Start Game
+        </button>
+      ) : (
+        <div className="h-100 w-100">
+        <Chessboard 
+        
+          options={{
+            position: fen,
+            onPieceDrop: onDrop,
+            boardOrientation: color ?? "white",
+            id: "multiplayer-board",
+          }}
+        />
         </div>
-    )
+      )}
+    </div>
+  );
 }
