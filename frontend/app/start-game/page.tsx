@@ -9,7 +9,7 @@ import type { PieceDropHandlerArgs } from "react-chessboard";
 export default function Game() {
   const socket = useSocket();
   const chessRef = useRef(new Chess());
-
+  const [clicked,setclicked]=useState(false)
   const [fen, setFen] = useState(chessRef.current.fen());
   const [color, setColor] = useState<"white" | "black" | null>(null);
   const [started, setStarted] = useState(false);
@@ -35,6 +35,7 @@ export default function Game() {
 
   function startGame() {
     socket?.send(JSON.stringify({ type: "init_game" }));
+    setclicked(true)
   }
 
   function onDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
@@ -80,7 +81,16 @@ export default function Game() {
           onClick={startGame}
           className="px-6 py-3 bg-white text-black rounded-lg font-semibold"
         >
-          Start Game
+          {
+            !clicked && (
+              <button onClick={startGame}>start-game</button>
+            )
+          }
+          {
+            clicked &&(
+              <button>Waiting for player...</button>
+            )
+          }
         </button>
       ) : (
         <div className="h-100 w-100">
