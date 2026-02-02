@@ -11,16 +11,17 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/adapter-pg": "^7.3.0",
+
     "@types/ws": "^8.18.1",
     "chess.js": "^1.4.0",
     "mongoose": "^9.1.5",
     "typescript": "^5.8.3",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "@repo/database":"workspace:*"
   },
   "devDependencies": {
     "@types/pg": "^8.16.0",
-    "dotenv": "^17.2.3",
-    "prisma": "^7.3.0"
+    "dotenv": "^17.2.3"
+
   }
 }

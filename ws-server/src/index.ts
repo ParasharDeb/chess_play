@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { WebSocketServer } from 'ws';
-import {UserModel} from "./db"
+import {UserModel} from "@repo/database"
 import { GameManager } from './gamemanager';
 const wss = new WebSocketServer({ port: 8080 });
 const manager = new GameManager();
