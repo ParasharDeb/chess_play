@@ -23,11 +23,11 @@ export class GameManager{
 
             if(message.type==INIT_GAME){
                 console.log("reacher here")
-                if(this.waitingplayer){
+                if(this.waitingplayer && this.waitingplayer!=socket){
                     const game = new Game(this.waitingplayer,socket)
                     this.games.push(game);
                     this.waitingplayer=null
-                    console.log("game started")
+                    console.log(game.id)
                 }
                 else{
                     this.waitingplayer=socket

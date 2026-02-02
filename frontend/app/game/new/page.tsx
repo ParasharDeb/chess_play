@@ -69,7 +69,7 @@ export default function Game() {
   if (!socket) {
     return (
       <div className="flex justify-center items-center h-screen text-white">
-        Connecting to server...
+        Sorry Backend is down
       </div>
     );
   }

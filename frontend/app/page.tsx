@@ -6,7 +6,7 @@ export default function Landing() {
       <h1 className="text-4xl font-bold">Chess App</h1>
 
       <Link
-        href="/start-game"
+        href="/game/new"
         className="px-6 py-3 bg-white text-black rounded-xl"
       >
         Start Playing
