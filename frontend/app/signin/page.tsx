@@ -21,7 +21,7 @@ export default function SigninPage() {
       });
       setLoading(false);
       // Handle successful signin (e.g., store token, redirect)
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       console.log(error);
       setLoading(false);
