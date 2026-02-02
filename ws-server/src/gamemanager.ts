@@ -8,7 +8,7 @@ export class GameManager{
     constructor(){
         this.games=[]    // should not be a in memeory varibale
         this.waitingplayer=null
-        this.users=[]    //didnt understand why this is empty**
+        this.users=[]    
     }
     addUser(socket:WebSocket){
         this.users.push(socket);

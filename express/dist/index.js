@@ -15,10 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const database_1 = require("@repo/database");
 const express_1 = __importDefault(require("express"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const cors_1 = __importDefault(require("cors"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const types_1 = require("./types");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
+app.use((0, cors_1.default)());
 (0, database_1.connectDB)();
 const JWT_SECRET = "!@#$%^&2345t6yu";
 app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
