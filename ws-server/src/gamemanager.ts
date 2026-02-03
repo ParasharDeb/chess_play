@@ -27,6 +27,7 @@ export class GameManager{
                     const game = new Game(this.waitingplayer,socket)
                     this.games.push(game);
                     this.waitingplayer=null
+                    console.log(this.waitingplayer)
                     console.log(game.id)
                 }
                 else{
@@ -34,7 +35,6 @@ export class GameManager{
                     socket.send(
                         JSON.stringify({
                             "type":WAITING,
-                            
                         }))
                     console.log("waiting")
                 }
