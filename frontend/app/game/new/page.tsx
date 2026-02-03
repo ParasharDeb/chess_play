@@ -4,13 +4,11 @@ import { useSocket } from "@/hooks/useSocket";
 import { Chessboard } from "react-chessboard";
 import { useEffect, useRef, useState } from "react";
 import { Chess } from "chess.js";
-import { useRouter } from "next/navigation";
 import type { PieceDropHandlerArgs } from "react-chessboard";
 import { motion } from "framer-motion";
 
 export default function Game() {
   const socket = useSocket();
-  const router=useRouter()
   const chessRef = useRef(new Chess());
   const [clicked, setclicked] = useState(false);
   const [fen, setFen] = useState(chessRef.current.fen());
@@ -35,9 +33,6 @@ export default function Game() {
         setFen(message.fen);
         const history = chessRef.current.history();
         setMoveHistory(history);
-      }
-      if(message.type=="game_over"){
-        router.push("/game/end")
       }
     };
   }, [socket]);
@@ -214,6 +209,23 @@ export default function Game() {
               transition={{ delay: 0.2 }}
               className="flex-[0.6] flex flex-col justify-center"
             >
+              {/* Game Header */}
+              {/* <div className="mb-4 text-center">
+                <h2
+                  className="text-2xl sm:text-3xl font-bold text-white mb-2"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  Game in Progress
+                </h2>
+                <p className="text-gray-400">
+                  You are playing as{" "}
+                  <span className="text-white font-semibold">
+                    {color === "white" ? "White ♔" : "Black ♚"}
+                  </span>
+                </p>
+              </div> */}
+
+              {/* Chess Board Container */}
               <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-screen">
                 <div className="h-215 w-215">
                   <Chessboard 
@@ -283,7 +295,7 @@ export default function Game() {
                               {move}
                             </span>
                             <span className="ml-auto text-2xl">
-                              {isWhiteMove ? "♚" : "♔"}
+                              {isWhiteMove ? "♔" : "♚"}
                             </span>
                           </motion.div>
                         );

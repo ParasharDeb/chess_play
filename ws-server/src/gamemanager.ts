@@ -23,20 +23,20 @@ export class GameManager{
 
             if(message.type==INIT_GAME){
                 console.log("reacher here")
-                if(this.waitingplayer && this.waitingplayer!=socket){
-                    const game = new Game(this.waitingplayer,socket)
-                    this.games.push(game);
-                    this.waitingplayer=null
-                    console.log(this.waitingplayer)
-                    console.log(game.id)
-                }
-                else{
+                if(!this.waitingplayer){
                     this.waitingplayer=socket
                     socket.send(
                         JSON.stringify({
                             "type":WAITING,
                         }))
                     console.log("waiting")
+                }
+                else if(this.waitingplayer && this.waitingplayer!=socket){
+                    const game = new Game(this.waitingplayer,socket)
+                    this.games.push(game);
+                    this.waitingplayer=null
+                    console.log(this.waitingplayer)
+                    console.log(game.id)
                 }
             }
             if(message.type==MOVE){
