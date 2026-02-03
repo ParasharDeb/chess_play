@@ -37,7 +37,7 @@ app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     const hashedpassword = yield bcrypt_1.default.hash(user.password, 10);
     try {
         const player = yield database_1.UserModel.create({
-            name: user.usenamme,
+            name: user.username,
             password: hashedpassword,
             email: user.email
         });
@@ -68,6 +68,37 @@ app.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return;
     }
     const token = jsonwebtoken_1.default.sign({ id: userExists._id }, JWT_SECRET);
-    res.json(token);
+    res.json({
+        token: token
+    });
+}));
+app.get("/getuser", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1];
+    console.log(token);
+    if (!token) {
+        res.json({
+            "message": "Unauthorized"
+        });
+        return;
+    }
+    const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+    if (!decoded) {
+        res.json({
+            "message": "Unauthorized"
+        });
+        return;
+    }
+    if (typeof decoded === "string") {
+        return res.json({ message: "Unauthorized" });
+    }
+    const user = yield database_1.UserModel.findById(decoded.id);
+    if (!user) {
+        res.json({
+            "message": "User not found"
+        });
+        return;
+    }
+    res.json(user);
 }));
 app.listen(3030);

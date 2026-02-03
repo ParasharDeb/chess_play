@@ -20,8 +20,9 @@ export default function SigninPage() {
         password: password,
       });
       setLoading(false);
+      localStorage.setItem("token", res.data.token);
       // Handle successful signin (e.g., store token, redirect)
-      router.push("/");
+      router.push("/game/new");
     } catch (error) {
       console.log(error);
       setLoading(false);
@@ -31,7 +32,7 @@ export default function SigninPage() {
 
   async function handleGoogleSignin() {
     // Add your Google OAuth logic here
-    console.log("Google OAuth signin");
+    alert("Google OAuth signin not available yet");
   }
 
   const containerVariants = {

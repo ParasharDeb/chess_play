@@ -23,7 +23,7 @@ app.post("/signup",async(req,res)=>{
     const hashedpassword= await bcrypt.hash(user.password,10)
     try{
         const player= await UserModel.create({
-            name:user.usenamme,
+            name:user.username,
             password:hashedpassword,
             email:user.email
         })
@@ -54,6 +54,36 @@ app.post("/signin",async(req,res)=>{
         return
     }
     const token = jwt.sign({id:userExists._id},JWT_SECRET)
-    res.json(token)
+    res.json({
+        token:token
+    })
+})
+app.get("/getuser",async(req,res)=>{
+    const token = req.headers.authorization?.split(" ")[1]
+    console.log(token)
+    if(!token){
+        res.json({
+            "message":"Unauthorized"
+        })
+        return
+    }
+    const decoded = jwt.verify(token,JWT_SECRET)
+    if(!decoded){
+        res.json({
+            "message":"Unauthorized"
+        })
+        return
+    }
+    if (typeof decoded === "string") {
+        return res.json({ message: "Unauthorized" });
+    }
+    const user = await UserModel.findById(decoded.id )
+    if(!user){
+        res.json({
+            "message":"User not found"
+        })
+        return
+    }
+    res.json(user.name)
 })
 app.listen(3030)
