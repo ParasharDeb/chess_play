@@ -84,6 +84,9 @@ app.get("/getuser",async(req,res)=>{
         })
         return
     }
-    res.json(user.name)
+    // Return a consistent object shape so frontend can safely read `res.data.name`
+    res.json({
+        name: user.name
+    })
 })
 app.listen(3030)

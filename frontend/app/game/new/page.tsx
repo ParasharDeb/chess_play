@@ -9,6 +9,7 @@ import axios from "axios";
 export default  function  Game() {
   const socket = useSocket();
   const [username, setUsername] = useState("");
+  const [opponentName, setOpponentName] = useState("");
   const chessRef = useRef(new Chess());
   async function getusername() {
     try {
@@ -31,6 +32,17 @@ export default  function  Game() {
   useEffect(()=>{
     getusername()
   },[])
+
+  // Send our username to the websocket server so it can share it with the opponent
+  useEffect(() => {
+    if (!socket || !username) return;
+
+    socket.send(JSON.stringify({
+      type: "auth",
+      username
+    }));
+  }, [socket, username]);
+
   useEffect(() => {
     if (!socket) return;
    
@@ -41,6 +53,9 @@ export default  function  Game() {
         setColor(message.color);
         setStarted(true);
         setid(message.id)
+        if (message.opponent) {
+          setOpponentName(message.opponent);
+        }
         
       }
 
@@ -105,16 +120,18 @@ export default  function  Game() {
         </div>
       ) : (
         <div className="h-100 w-100">
-          {id}
-        <Chessboard 
-        
-          options={{
-            position: fen,
-            onPieceDrop: onDrop,
-            boardOrientation: color ?? "white",
-            id: "multiplayer-board",
-          }}
-        />
+          <div className="mb-2 text-white">
+            <div>Game ID: {id}</div>
+            <div>Opponent: {opponentName || "Unknown player"}</div>
+          </div>
+          <Chessboard 
+            options={{
+              position: fen,
+              onPieceDrop: onDrop,
+              boardOrientation: color ?? "white",
+              id: "multiplayer-board",
+            }}
+          />
         </div>
       )}
     </div>

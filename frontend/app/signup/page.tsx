@@ -17,7 +17,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       const res = await axios.post("http://localhost:3030/signup", {
-        usenamme: username,
+        username: username,
         password: password,
         email: email,
       });
