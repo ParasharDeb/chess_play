@@ -6,11 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import type { PieceDropHandlerArgs } from "react-chessboard";
 import axios from "axios";
+import WinningCard from "@/components/endcomponent";
+
 export default  function  Game() {
   const socket = useSocket();
   const [username, setUsername] = useState("");
   const [opponentName, setOpponentName] = useState("");
   const chessRef = useRef(new Chess());
+  const [clicked,setclicked]=useState(false)
+  const [winner,setwinner]=useState<string|null>(null)
   async function getusername() {
     try {
       const res = await axios.get("http://localhost:3030/getuser", {
@@ -33,7 +37,7 @@ export default  function  Game() {
     getusername()
   },[])
 
-  // Send our username to the websocket server so it can share it with the opponent
+
   useEffect(() => {
     if (!socket || !username) return;
 
@@ -58,16 +62,21 @@ export default  function  Game() {
         }
         
       }
-
       if (message.type === "opponent_move") {
         chessRef.current.load(message.fen);
         setFen(message.fen);
+      }
+      if(message.type=="game_over"){
+        setwinner(message.result)
+        console.log(message.result)
       }
     };
   }, [socket]);
 
   function startGame() {
+    setclicked(true)
     socket?.send(JSON.stringify({ type: "init_game" }));
+    setwinner(null)
   }
 
   function onDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
@@ -105,7 +114,11 @@ export default  function  Game() {
       </div>
     );
   }
-
+  if(winner!=null){
+   return (
+    <WinningCard winner={winner} />
+   )
+  }
   return (
     <div className="flex flex-col justify-center items-center h-screen bg-black gap-6">
       {!started ? (
@@ -115,7 +128,7 @@ export default  function  Game() {
           onClick={startGame}
           className="px-6 py-3 bg-white text-black rounded-lg font-semibold"
         >
-          Start Game
+          {clicked?'searching for players...':'start-game'}
         </button>
         </div>
       ) : (

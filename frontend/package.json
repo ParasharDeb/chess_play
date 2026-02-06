@@ -18,7 +18,8 @@
     "next-auth": "^4.24.13",
     "react": "19.2.3",
     "react-chessboard": "^5.8.6",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@repo/database": "workspace:*",
