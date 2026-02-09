@@ -13,6 +13,7 @@ export class Game {
     public player1Name: string;
     public player2Name: string;
 
+
     constructor(player1: WebSocket, player2: WebSocket, player1Name: string, player2Name: string) {
         this.player1 = player1;
         this.player2 = player2;
@@ -22,6 +23,7 @@ export class Game {
         this.starttime = new Date();
         this.id = randomUUID();
         this.fen = this.board.fen();
+
 
         this.player1.send(
             JSON.stringify({
@@ -63,10 +65,15 @@ export class Game {
         try {
             const result = this.board.move(move);
             if (!result) return; // optional: invalid move protection
-
             this.fen = this.board.fen();
+            console.log(this.board.history())
+            socket.send(JSON.stringify({type:"move_history",history:this.board.history()}))
+            const opponent = socket === this.player1 ? this.player2 : this.player1;
+            opponent.send(JSON.stringify({type:"move_history",history:this.board.history()})
+        );
 
         } catch (e) {
+            console.log("error here")
             console.log(e);
         }
 
