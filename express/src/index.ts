@@ -86,7 +86,11 @@ app.get("/getuser",async(req,res)=>{
     }
     // Return a consistent object shape so frontend can safely read `res.data.name`
     res.json({
-        name: user.name
+        name: user.name,
+        rating:user.rating
     })
+})
+app.post("/fixrating",(req,res)=>{
+    
 })
 app.listen(3030)
