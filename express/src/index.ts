@@ -90,7 +90,5 @@ app.get("/getuser",async(req,res)=>{
         rating:user.rating
     })
 })
-app.post("/fixrating",(req,res)=>{
-    
-})
+
 app.listen(3030)
