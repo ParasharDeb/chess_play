@@ -2,15 +2,15 @@ import { WebSocket } from "ws";
 import { Game } from "./game";
 import { AUTH, INIT_GAME, MOVE, WAITING } from "./message";
 import { GamesModel, UserModel } from "@repo/database";
+
 export class GameManager {
     private waitingplayer: WebSocket | null;
-    private games:Game[]
+    private games: Game[];
     private users: WebSocket[];
-    // Track usernames associated with each socket
     private usernames: Map<WebSocket, string>;
 
     constructor() {
-        this.games=[]
+        this.games = [];
         this.waitingplayer = null;
         this.users = [];
         this.usernames = new Map();
@@ -24,72 +24,113 @@ export class GameManager {
     removeUser(socket: WebSocket) {
         this.users = this.users.filter(user => user !== socket);
         this.usernames.delete(socket);
+
+        if (this.waitingplayer === socket) {
+            this.waitingplayer = null;
+        }
     }
 
     private addHandler(socket: WebSocket) {
-        socket.on("message", async(data) => {
-            const message = JSON.parse(data.toString());
+        socket.on("message", async (data) => {
+            try {
+                const message = JSON.parse(data.toString());
 
-            if (message.type === AUTH) {
-                if (typeof message.username === "string") {
-                    this.usernames.set(socket, message.username);
+                // ================= AUTH =================
+                if (message.type === AUTH) {
+                    if (typeof message.username === "string") {
+                        this.usernames.set(socket, message.username);
+                    }
+                    return;
                 }
-                return;
-            }
 
-            if (message.type === INIT_GAME) {
-                console.log("reached here");
-                if (!this.waitingplayer) {
-                    this.waitingplayer = socket;
-                    socket.send(
-                        JSON.stringify({
+                // ================= INIT GAME =================
+                if (message.type === INIT_GAME) {
+                    console.log("INIT_GAME received");
+
+                    // First player waits
+                    if (!this.waitingplayer) {
+                        this.waitingplayer = socket;
+
+                        socket.send(JSON.stringify({
                             type: WAITING,
-                        }))
-                    console.log("waiting");
+                        }));
+
+                        console.log("Player waiting...");
+                        return;
+                    }
+
+                    // Second player joins
+                    if (this.waitingplayer !== socket) {
+                        const player1Name = this.usernames.get(this.waitingplayer);
+                        const player2Name = this.usernames.get(socket);
+
+                        if (!player1Name || !player2Name) {
+                            socket.send("Auth required");
+                            return;
+                        }
+
+                        // Fetch ONLY _id for efficiency
+                        const player1 = await UserModel
+                            .findOne({ name: player1Name })
+                            .select("_id");
+
+                        if (!player1) {
+                            socket.send("Player1 not found");
+                            return;
+                        }
+
+                        const player2 = await UserModel
+                            .findOne({ name: player2Name })
+                            .select("_id");
+
+                        if (!player2) {
+                            socket.send("Player2 not found");
+                            return;
+                        }
+
+                        // Create in-memory game
+                        const gameInstance = new Game(
+                            this.waitingplayer,
+                            socket,
+                            player1Name,
+                            player2Name
+                        );
+
+                        this.games.push(gameInstance);
+
+                        // Save to DB
+                        try {
+                            const dbGame = await GamesModel.create({
+                                whiteplayer: player1._id,
+                                blackplayer: player2._id,
+                            });
+
+                            console.log("DB Game created:", dbGame.id);
+                        } catch (error) {
+                            console.log("DB error:", error);
+                            return;
+                        }
+
+                        this.waitingplayer = null;
+                    }
+
+                    return;
                 }
-                else if (this.waitingplayer && this.waitingplayer != socket) {
-                    const player1Name = this.usernames.get(this.waitingplayer) ;
-                    if(!player1Name){
-                        socket.send("express server is down")
-                        return
-                    }
-                    const player2Name = this.usernames.get(socket) ;
-                    if(!player2Name){
-                        socket.send("express server is down")
-                        return
-                    }
-                    const player1ID=await UserModel.findOne({name:player1Name})
-                    const player2ID=await UserModel.findOne({name:player2Name})
-                    const game = new Game(
-                        this.waitingplayer,
-                        socket,
-                        player1Name,
-                        player2Name
+
+                // ================= MOVE =================
+                if (message.type === MOVE) {
+                    const game = this.games.find(
+                        g => g.player1 === socket || g.player2 === socket
                     );
-                    this.games.push(game)
-                    try {
-                        const game=await GamesModel.create({
-                            whiteplayer:player1ID,
-                            blackplayer:player2ID,
 
-                        })
-                        console.log(game.id)
-                        
-                    } catch (error) {
-                        console.log(error)
-                        return
+                    if (game) {
+                        game.makeMove(socket, message.move);
                     }
-                    this.waitingplayer = null;
-                    console.log(game.id);
                 }
-            }
 
-            if (message.type === MOVE) {
-                const game = this.games.find(g => g.player1 === socket || g.player2 === socket);
-                if (game) {
-                    game.makeMove(socket, message.move);
-                }
+            } catch (err) {
+                console.log("Invalid message:", err);
             }
-        })
+        });
     }
 }
