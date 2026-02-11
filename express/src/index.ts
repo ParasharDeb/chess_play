@@ -6,7 +6,15 @@ import jwt from "jsonwebtoken"
 import {SigninSchmea,SignupSchmea} from "./types" 
 const app= express();
 app.use(express.json())
-app.use(cors())
+app.use(express.json());
+
+app.use(cors({
+    origin: "*",
+    methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+    allowedHeaders: ["Content-Type","Authorization"],
+}));
+
+app.options("*", cors());
 connectDB();
 const JWT_SECRET="!@#$%^&2345t6yu"
 app.post("/signup",async(req,res)=>{
