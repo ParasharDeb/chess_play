@@ -8,13 +8,9 @@ const app= express();
 app.use(express.json())
 app.use(express.json());
 
-app.use(cors({
-    origin: "*",
-    methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-    allowedHeaders: ["Content-Type","Authorization"],
-}));
+app.use(cors());
 
-app.options("*", cors());
+
 connectDB();
 const JWT_SECRET="!@#$%^&2345t6yu"
 app.post("/signup",async(req,res)=>{

@@ -20,6 +20,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const types_1 = require("./types");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
+app.use(express_1.default.json());
 app.use((0, cors_1.default)());
 (0, database_1.connectDB)();
 const JWT_SECRET = "!@#$%^&2345t6yu";
