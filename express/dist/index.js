@@ -102,7 +102,8 @@ app.get("/getuser", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
     // Return a consistent object shape so frontend can safely read `res.data.name`
     res.json({
-        name: user.name
+        name: user.name,
+        rating: user.rating
     });
 }));
 app.listen(3030);

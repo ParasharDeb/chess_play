@@ -11,6 +11,7 @@ import WinningCard from "@/components/endcomponent";
 export default function Game() {
   const socket = useSocket();
   const [username, setUsername] = useState("");
+
   const [opponentName, setOpponentName] = useState("");
   const chessRef = useRef(new Chess());
   const [clicked, setclicked] = useState(false);
@@ -24,7 +25,6 @@ export default function Game() {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-
       setUsername(res.data.name);
     } catch (err) {
       console.error(err);
@@ -76,6 +76,7 @@ export default function Game() {
       }
 
       if (message.type == "game_over") {
+
         setwinner(message.result);
       }
     };
@@ -156,6 +157,7 @@ export default function Game() {
             <div className="font-semibold">
               {opponentName || "Unknown player"}
             </div>
+            
           </div>
 
           {/* Board + Sidebar */}
@@ -174,8 +176,9 @@ export default function Game() {
             </div>
 
             {/* Moves Sidebar */}
-            <div className="bg-zinc-900 flex-1 max-w-sm rounded-xl shadow-xl flex flex-col border border-zinc-700">
-              
+            
+            <div className="bg-zinc-900 flex-1 max-w-4xl rounded-xl shadow-xl flex flex-col border border-zinc-700">
+              <button className="bg-red-600 h-10 w-fit rounded-lg px-10 py-2 mx-15 my-5">Resign</button>
               <div className="p-4 border-b border-zinc-700 bg-zinc-800">
                 <h1 className="text-lg font-semibold tracking-wide">
                   Move History
