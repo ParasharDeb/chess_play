@@ -199,6 +199,7 @@ export default function SigninPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 type="submit"
+                onClick={handleSignin}
                 disabled={loading}
                 className="w-full py-3 px-4 bg-gradient-to-r from-gray-800 to-black text-white font-semibold rounded-lg shadow-lg hover:from-gray-700 hover:to-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
               >

@@ -7,7 +7,9 @@ const ObjectId=Schema.ObjectId
 export async function connectDB() {
   if (mongoose.connection.readyState >= 1) return;
 
-  const uri = process.env.DATABASE_URL || "mongodb://localhost:27017";
+  const uri = process.env.DATABASE_URL ;
+  console.log(uri)
+  //@ts-ignore
   await mongoose.connect(uri)
   console.log("Mongo connected");
 }
