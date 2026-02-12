@@ -21,7 +21,7 @@ export default function Game() {
 
   async function getusername() {
     try {
-      const res = await axios.get("http://localhost:3030/getuser", {
+      const res = await axios.get(`http://${process.env.NEXT_PUBLIC_IP_ADDRESS}/getuser`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

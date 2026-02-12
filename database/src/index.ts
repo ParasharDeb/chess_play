@@ -1,10 +1,14 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config();
 const Schema = mongoose.Schema;
 const ObjectId=Schema.ObjectId
 export async function connectDB() {
   if (mongoose.connection.readyState >= 1) return;
 
-  await mongoose.connect("mongodb://localhost:27017")
+  const uri = process.env.DATABASE_URL || "mongodb://localhost:27017";
+  await mongoose.connect(uri)
   console.log("Mongo connected");
 }
 const winnerEnum = ["white", "black", "draw","none"];
