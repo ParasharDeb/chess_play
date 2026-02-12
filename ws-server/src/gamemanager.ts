@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import { Game } from "./game";
-import { AUTH, INIT_GAME, MOVE, WAITING } from "./message";
+import { AUTH, ENDGAME, INIT_GAME, MOVE, WAITING } from "./message";
 import { GamesModel, UserModel } from "@repo/database";
 
 export class GameManager {
@@ -104,7 +104,8 @@ export class GameManager {
                                 whiteplayer: player1._id,
                                 blackplayer: player2._id,
                             });
-
+                            console.log(player1._id)
+                            console.log(player2._id)
                             console.log("DB Game created:", dbGame.id);
                         } catch (error) {
                             console.log("DB error:", error);
@@ -126,6 +127,24 @@ export class GameManager {
                     if (game) {
                         game.makeMove(socket, message.move);
                     }
+                }
+                if(message.type === ENDGAME){
+                    console.log("started ending game")
+                    const winnerName=message.winnerName
+                    const loserName=message.loserName
+                    
+                    // this is bad there probably should be an express server call where the increment and decrement is done
+                    try {
+                        const winner = await UserModel.updateOne({name:winnerName},{$inc:{rating:8}} )
+                    const loser = await UserModel.updateOne({name:loserName},{$inc:{rating:-7}})
+                    if(!winner || !loser){
+                        socket.send("it is a draw")
+                    }
+                    socket.send("ratings adjusted")
+                    } catch (error) {
+                        socket.send("Sorry DB is DOWN")
+                    }
+                    
                 }
 
             } catch (err) {
