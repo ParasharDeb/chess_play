@@ -2,6 +2,7 @@ import { WebSocket } from "ws";
 import { INIT_GAME } from "./message";
 import { Chess } from "chess.js";
 import { randomUUID } from "crypto";
+import { UserModel } from "@repo/database";
 
 export class Game {
     public player1: WebSocket;
@@ -44,7 +45,21 @@ export class Game {
             })
         );
     }
-
+    public async handleResign(winnerName:string,loserName:string){
+        try {
+                        const winner = await UserModel.updateOne({name:winnerName},{$inc:{rating:8}} )
+                    const loser = await UserModel.updateOne({name:loserName},{$inc:{rating:-7}})
+                    if(!winner || !loser){
+                        this.player1.send(JSON.stringify({type:"match_ended",result:"it is a draw"}))
+                        this.player2.send(JSON.stringify({type:"match_ended",result:"it is a draw"}))
+                        
+                    }
+                    this.player1.send(JSON.stringify({type:"match_ended",result:"resigned"}))
+                    this.player2.send(JSON.stringify({type:"match_ended",result:"resigned"}))
+                    } catch (error) {
+                        console.log("DB is down")
+                    }
+    }
     makeMove(socket: WebSocket,
         move: {
             from: string,

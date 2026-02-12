@@ -31,8 +31,14 @@ export default function Game() {
       console.error(err);
     }
   }
-  async function Resignfunction() {
-    
+  async function Resignfunction({winnerName,loserName}:{winnerName:string,loserName:string}) {
+    socket?.send(
+      JSON.stringify({
+        type:"end_game",
+        winnerName:winnerName,
+        loserName:loserName
+      })
+    )
   }
   const [fen, setFen] = useState(chessRef.current.fen());
   const [color, setColor] = useState<"white" | "black" | null>(null);
@@ -59,7 +65,6 @@ export default function Game() {
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-
       if (message.type === "init_game") {
         setColor(message.color);
         setStarted(true);
@@ -68,7 +73,9 @@ export default function Game() {
           setOpponentName(message.opponent);
         }
       }
-
+      if(message.type=="match_ended"){
+        setwinner("Match ended by resignation")
+      }
       if (message.type === "opponent_move") {
         chessRef.current.load(message.fen);
         setFen(message.fen);
@@ -182,12 +189,14 @@ export default function Game() {
               
             </div>
               <div>
-                <ChessClock format="blitz" shouldStart={true}/>
+                <ChessClock format="blitz" shouldStart={false}/>
               </div>
             {/* Moves Sidebar */}
             
             <div className="bg-zinc-900 flex-1 max-w-4xl rounded-xl shadow-xl flex flex-col border border-zinc-700">
-              <button className="bg-red-600 h-10 w-fit rounded-lg px-10 py-2 mx-15 my-5" onClick={Resignfunction}>Resign</button>
+              <button className="bg-red-600 h-10 w-fit rounded-lg px-10 py-2 mx-15 my-5"
+               onClick={()=>Resignfunction({winnerName:"parashar",loserName:"paritosh"})}>
+                Resign</button>
               <div className="p-4 border-b border-zinc-700 bg-zinc-800">
                 <h1 className="text-lg font-semibold tracking-wide">
                   Move History

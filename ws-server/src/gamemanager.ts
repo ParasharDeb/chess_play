@@ -134,16 +134,21 @@ export class GameManager {
                     const loserName=message.loserName
                     
                     // this is bad there probably should be an express server call where the increment and decrement is done
-                    try {
-                        const winner = await UserModel.updateOne({name:winnerName},{$inc:{rating:8}} )
-                    const loser = await UserModel.updateOne({name:loserName},{$inc:{rating:-7}})
-                    if(!winner || !loser){
-                        socket.send("it is a draw")
-                    }
-                    socket.send("ratings adjusted")
-                    } catch (error) {
-                        socket.send("Sorry DB is DOWN")
-                    }
+                    // Better approach 
+                    // the redis should have the winner name and the loser name 
+                    // it should push from here
+                    // express gets the names and updates it
+                    // also i dont know if it will work when there are more players
+                    const game = this.games.find(
+         g => g.player1 === socket || g.player2 === socket
+                );
+
+    if (game) {
+        await game.handleResign(winnerName, loserName);
+        // Remove from games array
+        this.games = this.games.filter(g => g.id !== game.id);
+    }
+                    
                     
                 }
 
