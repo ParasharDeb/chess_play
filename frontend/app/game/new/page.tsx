@@ -44,6 +44,9 @@ export default function Game() {
   const [color, setColor] = useState<"white" | "black" | null>(null);
   const [started, setStarted] = useState(false);
   const [id, setid] = useState("");
+  const intervalRef = useRef<number | null>(null);
+  const [whiteTime, setWhiteTime] = useState<number>(299); // keep same constants as before (blitz default ~4:59)
+  const [blackTime, setBlackTime] = useState<number>(299);
 
   useEffect(() => {
     getusername();
@@ -73,6 +76,15 @@ export default function Game() {
           if (message.opponent) {
             setOpponentName(message.opponent);
           }
+          // initialize both clocks using same constants as the old clock component logic
+          if (message.type === "init_game") {
+            if (message.color) {
+              // default format used in UI is 'blitz' so default seconds ~ 4:59 per client clock
+              const initial = 4 * 60 + 59;
+              setWhiteTime(initial);
+              setBlackTime(initial);
+            }
+          }
         }
         if(message.type=="match_ended"){
           setwinner("Match ended by resignation")
@@ -80,6 +92,12 @@ export default function Game() {
         if (message.type === "opponent_move") {
           chessRef.current.load(message.fen);
           setFen(message.fen);
+          // if opponent forwarded timeRemaining, sync clocks
+          if (message.move && message.move.timeRemaining) {
+            const tr = message.move.timeRemaining;
+            if (typeof tr.white === 'number') setWhiteTime(tr.white);
+            if (typeof tr.black === 'number') setBlackTime(tr.black);
+          }
         }
 
         if (message.type === "move_history") {
@@ -100,6 +118,52 @@ export default function Game() {
     };
   }, [socket]);
 
+  // manage which clock is running based on the current board turn
+  useEffect(() => {
+    if (!started || !color) return;
+
+    const activeTurn = chessRef.current.turn(); // 'w' or 'b'
+    const isMyTurn = (color === 'white' && activeTurn === 'w') || (color === 'black' && activeTurn === 'b');
+
+    // clear existing interval
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (isMyTurn) {
+      intervalRef.current = window.setInterval(() => {
+        if (color === 'white') {
+          setWhiteTime(prev => {
+            if (prev <= 0) return 0;
+            const next = prev - 1;
+            if (next === 0) {
+              // time ran out, send end_game
+              socket?.send(JSON.stringify({ type: "end_game", winnerName: opponentName || "", loserName: username || "" }));
+            }
+            return next;
+          });
+        } else {
+          setBlackTime(prev => {
+            if (prev <= 0) return 0;
+            const next = prev - 1;
+            if (next === 0) {
+              socket?.send(JSON.stringify({ type: "end_game", winnerName: opponentName || "", loserName: username || "" }));
+            }
+            return next;
+          });
+        }
+      }, 1000) as unknown as number;
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [started, color, fen, socket, opponentName, username]);
+
   function startGame() {
     setclicked(true);
     socket?.send(JSON.stringify({ type: "init_game" }));
@@ -109,12 +173,14 @@ export default function Game() {
   function onDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
     if (!started || !targetSquare) return false;
 
+    // include current remaining times so opponent can sync clocks
     socket?.send(
       JSON.stringify({
         type: "move",
         move: {
           from: sourceSquare,
           to: targetSquare,
+          timeRemaining: { white: whiteTime, black: blackTime }
         },
       })
     );
@@ -177,34 +243,36 @@ export default function Game() {
             </div>
             
           </div>
-          <div>
-            <ChessClock format="blitz" shouldStart={false}/>
-          </div>
           {/* Board + Sidebar */}
-          <div className="flex justify-center items-start gap-10 flex-1">
-            
-            {/* Chessboard */}
-            <div className="w-[600px] shadow-2xl rounded-xl overflow-hidden">
-              
-              <Chessboard
-                options={{
-                  position: fen,
-                  onPieceDrop: onDrop,
-                  boardOrientation: color ?? "white",
-                  id: "multiplayer-board",
-                }}
-              />
-              
-            </div>
-              <div>
-                <ChessClock format="blitz" shouldStart={true}/>
+          <div className="flex justify-center items-start gap-6 flex-1">
+
+            {/* Board column: opponent clock - board - player clock */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="mb-2">
+                <ChessClock format="blitz" timeSeconds={color === 'white' ? blackTime : whiteTime} running={!(color === 'white' ? chessRef.current.turn() === 'w' : chessRef.current.turn() === 'b')} />
               </div>
+
+              <div className="w-[600px] shadow-2xl rounded-xl overflow-hidden">
+                <Chessboard
+                  options={{
+                    position: fen,
+                    onPieceDrop: onDrop,
+                    boardOrientation: color ?? "white",
+                    id: "multiplayer-board",
+                  }}
+                />
+              </div>
+
+              <div className="mt-2">
+                <ChessClock format="blitz" timeSeconds={color === 'white' ? whiteTime : blackTime} running={(color === 'white' ? chessRef.current.turn() === 'w' : chessRef.current.turn() === 'b')} />
+              </div>
+            </div>
+
             {/* Moves Sidebar */}
-            
-            <div className="bg-zinc-900 flex-1 max-w-4xl rounded-xl shadow-xl flex flex-col border border-zinc-700">
+            <div className="bg-zinc-900 flex-1 max-w-[28rem] rounded-xl shadow-xl flex flex-col border border-zinc-700">
+
               <button className="bg-red-600 h-10 w-fit rounded-lg px-10 py-2 mx-15 my-5"
-              //BIG TODO NEED TO FIX THIS
-               onClick={()=>Resignfunction({winnerName:"parashar",loserName:"paritosh"})}>
+               onClick={()=>Resignfunction({winnerName:opponentName || "",loserName:username || ""})}>
 
                 Resign</button>
               <div className="p-4 border-b border-zinc-700 bg-zinc-800">
