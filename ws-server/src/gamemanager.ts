@@ -65,7 +65,7 @@ export class GameManager {
                         const player2Name = this.usernames.get(socket);
 
                         if (!player1Name || !player2Name) {
-                            socket.send("Auth required");
+                            socket.send(JSON.stringify({type: "error", message: "Auth required"}));
                             return;
                         }
 
@@ -75,7 +75,7 @@ export class GameManager {
                             .select("_id");
 
                         if (!player1) {
-                            socket.send("Player1 not found");
+                            socket.send(JSON.stringify({type: "error", message: "Player1 not found"}));
                             return;
                         }
 
@@ -84,7 +84,7 @@ export class GameManager {
                             .select("_id");
 
                         if (!player2) {
-                            socket.send("Player2 not found");
+                            socket.send(JSON.stringify({type: "error", message: "Player2 not found"}));
                             return;
                         }
 

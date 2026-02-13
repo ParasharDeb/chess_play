@@ -64,30 +64,38 @@ export default function Game() {
     if (!socket) return;
 
     socket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === "init_game") {
-        setColor(message.color);
-        setStarted(true);
-        setid(message.id);
-        if (message.opponent) {
-          setOpponentName(message.opponent);
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === "init_game") {
+          setColor(message.color);
+          setStarted(true);
+          setid(message.id);
+          if (message.opponent) {
+            setOpponentName(message.opponent);
+          }
         }
-      }
-      if(message.type=="match_ended"){
-        setwinner("Match ended by resignation")
-      }
-      if (message.type === "opponent_move") {
-        chessRef.current.load(message.fen);
-        setFen(message.fen);
-      }
+        if(message.type=="match_ended"){
+          setwinner("Match ended by resignation")
+        }
+        if (message.type === "opponent_move") {
+          chessRef.current.load(message.fen);
+          setFen(message.fen);
+        }
 
-      if (message.type === "move_history") {
-        setmovehistory(message.history);
-      }
+        if (message.type === "move_history") {
+          setmovehistory(message.history);
+        }
 
-      if (message.type == "game_over") {
+        if (message.type == "game_over") {
 
-        setwinner(message.result);
+          setwinner(message.result);
+        }
+        if (message.type === "error") {
+          console.error("Server error:", message.message);
+          alert("Error: " + message.message);
+        }
+      } catch (error) {
+        console.error("Failed to parse message:", error, "Data:", event.data);
       }
     };
   }, [socket]);

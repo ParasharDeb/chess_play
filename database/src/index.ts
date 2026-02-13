@@ -9,7 +9,10 @@ export async function connectDB() {
 
   const uri = process.env.DATABASE_URL ;
   console.log(uri)
-  //@ts-ignore
+  if(!uri){
+    console.log("db not found")
+    return
+  }
   await mongoose.connect(uri)
   console.log("Mongo connected");
 }
