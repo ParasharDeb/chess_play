@@ -197,13 +197,15 @@ export default function Game() {
               
             </div>
               <div>
-                <ChessClock format="blitz" shouldStart={false}/>
+                <ChessClock format="blitz" shouldStart={true}/>
               </div>
             {/* Moves Sidebar */}
             
             <div className="bg-zinc-900 flex-1 max-w-4xl rounded-xl shadow-xl flex flex-col border border-zinc-700">
               <button className="bg-red-600 h-10 w-fit rounded-lg px-10 py-2 mx-15 my-5"
+              //BIG TODO NEED TO FIX THIS
                onClick={()=>Resignfunction({winnerName:"parashar",loserName:"paritosh"})}>
+
                 Resign</button>
               <div className="p-4 border-b border-zinc-700 bg-zinc-800">
                 <h1 className="text-lg font-semibold tracking-wide">
