@@ -239,6 +239,7 @@ export default function Game() {
 
             <div className="mt-2 text-sm text-zinc-400">Opponent</div>
             <div className="font-semibold">
+              LMAO
               {opponentName || "Unknown player"}
             </div>
             
@@ -253,6 +254,7 @@ export default function Game() {
               </div>
 
               <div className="w-[600px] shadow-2xl rounded-xl overflow-hidden">
+                
                 <Chessboard
                   options={{
                     position: fen,

@@ -39,7 +39,7 @@ export default function ChessLandingPage() {
   };
 
   const features = [
-    { icon: "♔", title: "Strategic Gameplay", description: "Master the art of chess with advanced AI opponents and tactical training" },
+    { icon: "♔", title: "Strategic Gameplay", description: "LMAO the art of chess with advanced AI opponents and tactical training" },
     { icon: "⚡", title: "Lightning Fast", description: "Instant matchmaking with players worldwide. No lag, just pure strategy" },
     { icon: "📊", title: "Deep Analytics", description: "Track your progress with detailed statistics and game analysis" },
     { icon: "🏆", title: "Tournaments", description: "Compete in daily tournaments and climb the global leaderboard" },
