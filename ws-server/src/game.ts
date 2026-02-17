@@ -13,26 +13,30 @@ export class Game {
     public id: string;
     public player1Name: string;
     public player2Name: string;
+    public player1Rating?: number;
+    public player2Rating?: number;
 
-
-    constructor(player1: WebSocket, player2: WebSocket, player1Name: string, player2Name: string) {
+    constructor(player1: WebSocket, player2: WebSocket, player1Name: string, player2Name: string, player1Rating?: number, player2Rating?: number) {
         this.player1 = player1;
         this.player2 = player2;
         this.player1Name = player1Name;
         this.player2Name = player2Name;
+        this.player1Rating = player1Rating ?? undefined;
+        this.player2Rating = player2Rating ?? undefined;
         this.board = new Chess();
         this.starttime = new Date();
         this.id = randomUUID();
         this.fen = this.board.fen();
-
-
+        
         this.player1.send(
             JSON.stringify({
                 type: INIT_GAME,
                 color: "white",
                 id: this.id,
                 you: this.player1Name,
-                opponent: this.player2Name
+                opponent: this.player2Name,
+                youRating: this.player1Rating ?? null,
+                opponentRating: this.player2Rating ?? null,
             })
         );
         this.player2.send(
@@ -41,26 +45,45 @@ export class Game {
                 color: "black",
                 id: this.id,
                 you: this.player2Name,
-                opponent: this.player1Name
+                opponent: this.player1Name,
+                youRating: this.player2Rating ?? null,
+                opponentRating: this.player1Rating ?? null,
             })
         );
     }
     public async handleResign(winnerName:string,loserName:string){
         try {
-                        const winner = await UserModel.updateOne({name:winnerName},{$inc:{rating:8}} )
-                    const loser = await UserModel.updateOne({name:loserName},{$inc:{rating:-7}})
-                    if(!winner || !loser){
-                        this.player1.send(JSON.stringify({type:"match_ended",result:"it is a draw"}))
-                        this.player2.send(JSON.stringify({type:"match_ended",result:"it is a draw"}))
-                        
-                    }
-                    this.player1.send(JSON.stringify({type:"match_ended",result:"resigned"}))
-                    this.player2.send(JSON.stringify({type:"match_ended",result:"resigned"}))
-                    } catch (error) {
-                        console.log("DB is down")
-                    }
+            // apply rating changes
+            const winnerChange = 8;
+            const loserChange = -7;
+
+            await UserModel.updateOne({ name: winnerName }, { $inc: { rating: winnerChange } });
+            await UserModel.updateOne({ name: loserName }, { $inc: { rating: loserChange } });
+
+            // fetch updated ratings
+            const winnerDoc = await UserModel.findOne({ name: winnerName }).select('name rating');
+            const loserDoc = await UserModel.findOne({ name: loserName }).select('name rating');
+
+            const payload = {
+                type: "match_ended",
+                result: "resigned",
+                winnerName,
+                loserName,
+                winnerRating: winnerDoc?.rating ?? null,
+                loserRating: loserDoc?.rating ?? null,
+                ratingChange: { winner: winnerChange, loser: loserChange }
+            };
+
+            this.player1.send(JSON.stringify(payload));
+            this.player2.send(JSON.stringify(payload));
+        } catch (error) {
+            console.log("DB is down", error);
+            // fallback: still notify clients without rating info
+            this.player1.send(JSON.stringify({ type: "match_ended", result: "resigned" }));
+            this.player2.send(JSON.stringify({ type: "match_ended", result: "resigned" }));
+        }
     }
-    makeMove(socket: WebSocket,
+    async makeMove(socket: WebSocket,
         move: {
             from: string,
             to: string
@@ -101,6 +124,41 @@ export class Game {
                     : this.board.isInsufficientMaterial() ? "draw by insufficient material"
                         : this.board.isThreefoldRepetition() ? "draw by threefold repetition"
                             : "draw";
+            // If it's a checkmate, update ratings similarly to a decisive win.
+            if (this.board.isCheckmate()) {
+                const winnerColor = this.board.turn() == 'w' ? 'black' : 'white';
+                const winnerName = winnerColor === 'white' ? this.player1Name : this.player2Name;
+                const loserName = winnerColor === 'white' ? this.player2Name : this.player1Name;
+
+                const winnerChange = 8;
+                const loserChange = -7;
+
+                try {
+                    await UserModel.updateOne({ name: winnerName }, { $inc: { rating: winnerChange } });
+                    await UserModel.updateOne({ name: loserName }, { $inc: { rating: loserChange } });
+
+                    const winnerDoc = await UserModel.findOne({ name: winnerName }).select('name rating');
+                    const loserDoc = await UserModel.findOne({ name: loserName }).select('name rating');
+
+                    const payload = JSON.stringify({
+                        type: "game_over",
+                        result: result,
+                        winnerName,
+                        loserName,
+                        winnerRating: winnerDoc?.rating ?? null,
+                        loserRating: loserDoc?.rating ?? null,
+                        ratingChange: { winner: winnerChange, loser: loserChange }
+                    });
+
+                    this.player1.send(payload);
+                    this.player2.send(payload);
+                    return;
+                } catch (err) {
+                    console.log('DB error updating ratings:', err);
+                }
+            }
+
+            // non-decisive endings: just send the game_over message
             const gameOverMessage = JSON.stringify({
                 type: "game_over",
                 result: result

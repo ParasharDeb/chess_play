@@ -69,10 +69,10 @@ export class GameManager {
                             return;
                         }
 
-                        // Fetch ONLY _id for efficiency
+                        // Fetch name and rating for both players
                         const player1 = await UserModel
                             .findOne({ name: player1Name })
-                            .select("_id");
+                            .select("_id name rating");
 
                         if (!player1) {
                             socket.send(JSON.stringify({type: "error", message: "Player1 not found"}));
@@ -81,7 +81,7 @@ export class GameManager {
 
                         const player2 = await UserModel
                             .findOne({ name: player2Name })
-                            .select("_id");
+                            .select("_id name rating");
 
                         if (!player2) {
                             socket.send(JSON.stringify({type: "error", message: "Player2 not found"}));
@@ -93,7 +93,10 @@ export class GameManager {
                             this.waitingplayer,
                             socket,
                             player1Name,
-                            player2Name
+                            player2Name,
+                            // pass ratings if available
+                            typeof player1?.rating === 'number' ? player1.rating : undefined,
+                            typeof player2?.rating === 'number' ? player2.rating : undefined,
                         );
 
                         this.games.push(gameInstance);

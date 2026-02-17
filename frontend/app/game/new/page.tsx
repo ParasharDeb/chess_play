@@ -11,9 +11,11 @@ import ChessClock from "@/components/clock";
 
 export default function Game() {
   const socket = useSocket();
-  const [username, setUsername] = useState("");
-
-  const [opponentName, setOpponentName] = useState("");
+  const [username, setUsername] = useState<string>("");
+  const [rating, setRating] = useState<number | null>(null);
+  const [opprating, setOppRating] = useState<number | null>(null);
+  const [ratingChange, setRatingChange] = useState<number>(0);
+  const [opponentName, setOpponentName] = useState<string>("");
   const chessRef = useRef(new Chess());
   const [clicked, setclicked] = useState(false);
   const [movehistory, setmovehistory] = useState([]);
@@ -21,7 +23,8 @@ export default function Game() {
 
   async function getusername() {
     try {
-      const res = await axios.get(`http://${process.env.NEXT_PUBLIC_IP_ADDRESS}/getuser`, {
+      const base = process.env.NEXT_PUBLIC_API_URL || `http://${process.env.NEXT_PUBLIC_IP_ADDRESS}` || "";
+      const res = await axios.get(`${base}/getuser`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -34,11 +37,11 @@ export default function Game() {
   async function Resignfunction({winnerName,loserName}:{winnerName:string,loserName:string}) {
     socket?.send(
       JSON.stringify({
-        type:"end_game",
-        winnerName:winnerName,
-        loserName:loserName
+        type: "end_game",
+        winnerName: winnerName,
+        loserName: loserName,
       })
-    )
+    );
   }
   const [fen, setFen] = useState(chessRef.current.fen());
   const [color, setColor] = useState<"white" | "black" | null>(null);
@@ -69,6 +72,7 @@ export default function Game() {
     socket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+
         if (message.type === "init_game") {
           setColor(message.color);
           setStarted(true);
@@ -76,19 +80,30 @@ export default function Game() {
           if (message.opponent) {
             setOpponentName(message.opponent);
           }
+          // set ratings if provided
+          if (typeof message.youRating === 'number') setRating(message.youRating);
+          if (typeof message.opponentRating === 'number') setOppRating(message.opponentRating);
+
           // initialize both clocks using same constants as the old clock component logic
-          if (message.type === "init_game") {
-            if (message.color) {
-              // default format used in UI is 'blitz' so default seconds ~ 4:59 per client clock
-              const initial = 4 * 60 + 59;
-              setWhiteTime(initial);
-              setBlackTime(initial);
-            }
+          const initial = 4 * 60 + 59;
+          setWhiteTime(initial);
+          setBlackTime(initial);
+        }
+
+        if (message.type === "match_ended") {
+          // If server provided rating info, use it
+          if (message.winnerName && (typeof message.winnerRating === 'number' || typeof message.loserRating === 'number')) {
+            const isMe = username === message.winnerName;
+            const newRating = isMe ? message.winnerRating : message.loserRating;
+            const rc = isMe ? message.ratingChange?.winner ?? 0 : message.ratingChange?.loser ?? 0;
+            if (typeof newRating === 'number') setRating(newRating);
+            setRatingChange(rc);
+            setwinner(isMe ? 'You Won 🎉' : 'You Lost 😢');
+          } else {
+            setwinner('Match ended');
           }
         }
-        if(message.type=="match_ended"){
-          setwinner("Match ended by resignation")
-        }
+
         if (message.type === "opponent_move") {
           chessRef.current.load(message.fen);
           setFen(message.fen);
@@ -104,10 +119,20 @@ export default function Game() {
           setmovehistory(message.history);
         }
 
-        if (message.type == "game_over") {
-
-          setwinner(message.result);
+        if (message.type === "game_over") {
+          // if server included rating info for game over
+          if (message.winnerName && (typeof message.winnerRating === 'number' || typeof message.loserRating === 'number')) {
+            const isMe = username === message.winnerName;
+            const newRating = isMe ? message.winnerRating : message.loserRating;
+            const rc = isMe ? message.ratingChange?.winner ?? 0 : message.ratingChange?.loser ?? 0;
+            if (typeof newRating === 'number') setRating(newRating);
+            setRatingChange(rc);
+            setwinner(isMe ? 'You Won 🎉' : 'You Lost 😢');
+          } else {
+            setwinner(message.result);
+          }
         }
+
         if (message.type === "error") {
           console.error("Server error:", message.message);
           alert("Error: " + message.message);
@@ -116,7 +141,7 @@ export default function Game() {
         console.error("Failed to parse message:", error, "Data:", event.data);
       }
     };
-  }, [socket]);
+  }, [socket, username]);
 
   // manage which clock is running based on the current board turn
   useEffect(() => {
@@ -210,7 +235,11 @@ export default function Game() {
   }
 
   if (winner != null) {
-    return <WinningCard winner={winner} />;
+    return <WinningCard
+      winner={winner}
+      rating={rating ?? 1200}
+      ratingChange={ratingChange}
+    />;
   }
 
   return (
@@ -239,10 +268,13 @@ export default function Game() {
 
             <div className="mt-2 text-sm text-zinc-400">Opponent</div>
             <div className="font-semibold">
-              LMAO
               {opponentName || "Unknown player"}
             </div>
-            
+            {opprating !== null && (
+              <div className="mt-1 text-sm text-zinc-300">
+                Rating: <span className="text-amber-400">{opprating}</span>
+              </div>
+            )}
           </div>
           {/* Board + Sidebar */}
           <div className="flex justify-center items-start gap-6 flex-1">
@@ -267,6 +299,11 @@ export default function Game() {
 
               <div className="mt-2">
                 <ChessClock format="blitz" timeSeconds={color === 'white' ? whiteTime : blackTime} running={(color === 'white' ? chessRef.current.turn() === 'w' : chessRef.current.turn() === 'b')} />
+                {rating !== null && (
+                  <div className="mt-2 text-center text-sm text-zinc-300">
+                    Your Rating: <span className="text-emerald-400 font-semibold">{rating}</span>
+                  </div>
+                )}
               </div>
             </div>
 
