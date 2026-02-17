@@ -1,0 +1,84 @@
+# Production Multi-stage Build
+# This builds all services in one image optimized for production
+
+# Stage 1: Build stage
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+# Copy workspace configuration
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+
+# Copy all services
+COPY express ./express
+COPY ws-server ./ws-server
+COPY frontend ./frontend
+COPY database ./database
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Build all packages
+RUN pnpm build
+
+# Stage 2: Runtime - Frontend
+FROM node:20-alpine AS frontend-runtime
+
+WORKDIR /app/frontend
+
+RUN npm install -g pnpm
+
+# Copy only necessary files from builder
+COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json /app/
+COPY --from=builder /app/frontend ./
+COPY --from=builder /app/database ../database
+
+WORKDIR /app/frontend
+
+RUN pnpm install --frozen-lockfile --prod
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
+
+# Stage 3: Runtime - Express API
+FROM node:20-alpine AS express-runtime
+
+WORKDIR /app/express
+
+RUN npm install -g pnpm
+
+# Copy only necessary files from builder
+COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json /app/
+COPY --from=builder /app/express ./
+COPY --from=builder /app/database ../database
+
+WORKDIR /app/express
+
+RUN pnpm install --frozen-lockfile --prod
+
+EXPOSE 3001
+
+CMD ["node", "dist/index.js"]
+
+# Stage 4: Runtime - WebSocket Server
+FROM node:20-alpine AS ws-runtime
+
+WORKDIR /app/ws-server
+
+RUN npm install -g pnpm
+
+# Copy only necessary files from builder
+COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json /app/
+COPY --from=builder /app/ws-server ./
+COPY --from=builder /app/database ../database
+
+WORKDIR /app/ws-server
+
+RUN pnpm install --frozen-lockfile --prod
+
+EXPOSE 8080
+
+CMD ["node", "dist/index.js"]
