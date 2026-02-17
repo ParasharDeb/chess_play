@@ -90,7 +90,7 @@ pnpm dev
 docker-compose up
 
 # Test API endpoint
-curl http://localhost:3001/health
+curl http://localhost:3030/
 
 # Open frontend
 # http://localhost:3000

@@ -29,9 +29,15 @@ Welcome to Chess Play! This guide will help you set up the project for developme
 
 ---
 
-## Quick Start with Docker
+## Quick Start with Docker (Recommended for Development)
 
-Setting up the entire application with Docker is the easiest and most reliable way to get started.
+This is the **recommended approach for new developers**. Docker handles all dependencies and configuration automatically.
+
+### Prerequisites
+
+- **Docker**: Version 20.10 or higher - [Install Docker](https://docs.docker.com/get-docker/)
+- **Docker Compose**: Version 2.0 or higher - [Install Docker Compose](https://docs.docker.com/compose/install/)
+- **Git**: For cloning the repository
 
 ### 1. Clone the Repository
 
@@ -40,49 +46,158 @@ git clone https://github.com/ParasharDeb/chess_play.git
 cd chess_play
 ```
 
-### 2. Build and Start Services
+### 2. Start All Services
 
 ```bash
-docker-compose up --build
+docker-compose -f dockerdev-compose.yml up --build
 ```
 
 This command will:
-- Build all Docker images for frontend, backend, and database
-- Start MongoDB service
-- Start Express API server on port `3001`
-- Start WebSocket server on port `8080`
-- Start Next.js frontend on port `3000`
+- Build optimized development Docker images
+- Start MongoDB service (port 27017)
+- Start Express Backend API (port 3030)
+- Start WebSocket Server (port 8080)
+- Start Next.js Frontend Dev Server (port 3000)
+- Set up hot reload for all services (changes are reflected instantly)
 
 ### 3. Access the Application
 
 Open your browser and navigate to:
 - **Frontend**: http://localhost:3000
-- **API**: http://localhost:3001
-- **WebSocket**: ws://localhost:8080
+- **API Documentation**: http://localhost:3030
+- **WebSocket Server**: ws://localhost:8080 (used by frontend)
 
-### 4. Verify Everything is Working
+### 4. View Logs in Real-Time
 
 ```bash
-# Check if all services are running
-docker-compose ps
-
-# View logs from all services
-docker-compose logs -f
+# View all service logs
+docker-compose -f dockerdev-compose.yml logs -f
 
 # View logs from a specific service
-docker-compose logs -f frontend
-docker-compose logs -f express
-docker-compose logs -f ws-server
+docker-compose -f dockerdev-compose.yml logs -f backend
+docker-compose -f dockerdev-compose.yml logs -f ws-server
+docker-compose -f dockerdev-compose.yml logs -f frontend
+docker-compose -f dockerdev-compose.yml logs -f mongo
 ```
 
-### 5. Stop the Services
+### 5. Check Service Status
 
 ```bash
-# Stop all services
-docker-compose down
+# View running containers
+docker-compose -f dockerdev-compose.yml ps
 
-# Stop services and remove volumes (database data will be deleted)
-docker-compose down -v
+# Expected output: All containers should show "Up" status
+```
+
+### 6. Test Services
+
+```bash
+# Test Express API
+curl -X GET http://localhost:3030/
+
+# Test WebSocket connection
+# Can use online tools: https://www.websocket.org/echo.html
+# Connect to: ws://localhost:8080
+
+# Frontend automatically loads at http://localhost:3000
+```
+
+### 7. Stop Services
+
+```bash
+# Stop all services (data persists)
+docker-compose -f dockerdev-compose.yml down
+
+# Stop all services and remove data volumes
+docker-compose -f dockerdev-compose.yml down -v
+
+# Optionally remove images as well
+docker-compose -f dockerdev-compose.yml down --rmi all
+```
+
+### 8. Development Workflow
+
+The Docker setup includes **hot reload** for all services:
+
+- **Backend (Express)**: Save changes to `express/src/` → automatically reloads (via pnpm dev)
+- **WebSocket Server**: Save changes to `ws-server/src/` → automatically reloads
+- **Frontend (Next.js)**: Save changes to `frontend/app/`, `frontend/components/`, etc. → automatically hot-reloads in browser
+
+Just make your code changes and see results instantly! No need to restart containers.
+
+### 9. Docker Setup Architecture
+
+```
+docker/
+├── backend/           # Express API Backend
+│   └── Dockerfile     # Optimized for development with hot reload
+├── ws/                # WebSocket Server
+│   └── Dockerfile     # Optimized for development with hot reload
+├── frontend/          # Next.js Frontend
+│   └── Dockerfile     # Optimized for development with hot reload
+└── .dockerignore      # Excludes unnecessary files from build context
+
+dockerdev-compose.yml # Development compose file (in root)
+```
+
+### 10. Common Docker Commands
+
+```bash
+# Rebuild all services (useful after dependency updates)
+docker-compose -f dockerdev-compose.yml build --no-cache
+
+# Rebuild a specific service
+docker-compose -f dockerdev-compose.yml build backend
+
+# Run a command in a container
+docker-compose -f dockerdev-compose.yml exec backend sh
+
+# View resource usage
+docker stats
+
+# Clean up unused Docker resources
+docker system prune
+```
+
+### 11. Troubleshooting Docker Setup
+
+**Issue: Port already in use**
+```bash
+# Find process using port 3000
+lsof -i :3000
+kill -9 <PID>
+
+# On Windows, use Task Manager or:
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+```
+
+**Issue: Containers won't start**
+```bash
+# View detailed error logs
+docker-compose -f dockerdev-compose.yml logs -f backend
+
+# Rebuild from scratch
+docker-compose -f dockerdev-compose.yml down -v
+docker-compose -f dockerdev-compose.yml up --build
+```
+
+**Issue: Volume mount not working**
+```bash
+# Ensure volume paths are correct
+docker-compose -f dockerdev-compose.yml exec backend ls -la /app/express/src
+
+# Rebuild if needed
+docker-compose -f dockerdev-compose.yml build backend
+```
+
+**Issue: Database connection refused**
+```bash
+# Ensure mongo is healthy
+docker-compose -f dockerdev-compose.yml healthcheck
+
+# Wait a few seconds for mongo to start, then restart services
+docker-compose -f dockerdev-compose.yml restart backend ws-server
 ```
 
 ---
@@ -166,7 +281,7 @@ pnpm build
 ```bash
 cd express
 pnpm run dev
-# Server runs on http://localhost:3001
+# Server runs on http://localhost:3030
 ```
 
 **Terminal 3: WebSocket Server**
@@ -189,7 +304,7 @@ pnpm run dev
 
 Open your browser and navigate to:
 - **Frontend**: http://localhost:3000
-- **API**: http://localhost:3001
+- **API**: http://localhost:3030
 - **WebSocket**: ws://localhost:8080
 
 ---
@@ -205,7 +320,7 @@ The main environment configuration should be placed in the root directory:
 DB_URL=mongodb://localhost:27017/chess_play
 
 # API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3030
 NEXT_PUBLIC_WS_URL=ws://localhost:8080
 
 # Environment
@@ -278,7 +393,7 @@ cd frontend && pnpm start
 
 ```bash
 # Using curl
-curl -X POST http://localhost:3001/signup \
+curl -X POST http://localhost:3030/signup \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
 
