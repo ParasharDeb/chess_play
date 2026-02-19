@@ -154,7 +154,7 @@ export default function SignupPage() {
                 transition={{ duration: 0.2 }}
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Enter your email here please"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
