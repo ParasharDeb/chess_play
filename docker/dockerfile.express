@@ -9,6 +9,7 @@ COPY database ./database
 COPY express ./express
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter database build
 RUN pnpm --filter express build
 
 EXPOSE 3030
