@@ -11,7 +11,7 @@ COPY ./frontend ./frontend
 
 RUN pnpm install 
 
-RUN cd frontend && pnpm DATABASE_URL=${DATABASE_URL} run build
+RUN cd frontend && pnpm run build
 
 EXPOSE 3000
 
