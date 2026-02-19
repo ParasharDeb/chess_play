@@ -30,8 +30,8 @@ jobs:
           chmod 600 ~/ssh_key
 
           ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.53.54.198 << EOF
-          docker rm -f user_backend || true
           docker stop user_backend
+          docker rm -f user_backend || true
           docker run -d \
           --name user_backend \
           -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
