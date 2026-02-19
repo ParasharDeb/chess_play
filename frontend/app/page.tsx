@@ -2,19 +2,22 @@
 
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { useEffect, useState } from "react";
-
+import { useRouter } from "next/navigation";
 export default function ChessLandingPage() {
   const [hasToken, setHasToken] = useState(false);
 
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-
+  const router=useRouter()
   useEffect(() => {
     const token = localStorage.getItem("token");
     setHasToken(!!token);
   }, []);
-
+  function Logout(){
+    localStorage.removeItem('token');
+    router.push("/signup")
+  }
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -116,7 +119,7 @@ export default function ChessLandingPage() {
           >
             Challenge players worldwide, analyze games with AI, and climb the ranks.
           </motion.p>
-
+          <div className="flex items-center justify-center w-full gap-10">
           <motion.div variants={itemVariants} className="flex gap-4 justify-center">
             <a
               href={hasToken ? "/game/new" : "/signup"}
@@ -125,6 +128,16 @@ export default function ChessLandingPage() {
               {hasToken ? "Start Playing" : "Start Free"}
             </a>
           </motion.div>
+          <motion.div variants={itemVariants} className="flex gap-4 justify-center">
+            <a
+              onClick={Logout}
+              className="px-8 py-4 bg-white text-black font-semibold rounded-lg"
+            >
+              {hasToken ? "Logout" : "...."}
+            </a>
+            
+          </motion.div>
+          </div>
         </motion.div>
       </section>
 
