@@ -34,7 +34,7 @@ jobs:
           docker run -d \
           --name user_backend \
           -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-          -p 8080:8080 \
+          -p 3030:3030 \
           --restart=always \
           parashardeb/chess-app-backend:${{ github.sha }}
           EOF

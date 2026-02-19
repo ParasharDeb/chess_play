@@ -1,4 +1,4 @@
-name: Continuous Deployment (Prod) (Frontend)
+name: Continuous Deployment (Prod) (Websocket)
 on:
   push:
     branches: [ main ]
@@ -20,10 +20,10 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./docker/dockerfile.frontend
+          file: ./docker/dockerfile.express
           push: true
-          tags: parashardeb/chess-app-frontend:${{ github.sha }}
-
+          tags: parashardeb/chess-app-ws:${{ github.sha }}
+      
       - name: Deploy to VM
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
@@ -34,7 +34,7 @@ jobs:
           docker run -d \
           --name user_backend \
           -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-          -p 3000:3000 \
+          -p 8080:8080 \
           --restart=always \
           parashardeb/chess-app-backend:${{ github.sha }}
           EOF
