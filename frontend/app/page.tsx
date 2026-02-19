@@ -133,7 +133,7 @@ export default function ChessLandingPage() {
               onClick={Logout}
               className="px-8 py-4 bg-white text-black font-semibold rounded-lg"
             >
-              {hasToken ? "Logout" : "...."}
+              {hasToken ? "Logout" : "Login"}
             </a>
             
           </motion.div>
