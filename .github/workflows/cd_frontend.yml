@@ -30,7 +30,6 @@ jobs:
           chmod 600 ~/ssh_key
 
           ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.53.54.198 << EOF
-          docker stop user_frontend
           docker rm -f user-frontend || true
           docker run -d \
           --name user_frontend \
