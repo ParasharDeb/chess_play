@@ -149,6 +149,7 @@ export class GameManager {
     if (game) {
         await game.handleResign(winnerName, loserName);
         // Remove from games array
+        // should remove from redis after i introduce it
         this.games = this.games.filter(g => g.id !== game.id);
     }
                     

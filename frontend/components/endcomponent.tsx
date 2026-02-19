@@ -35,7 +35,7 @@ export default function WinningCard({ winner, rating, ratingChange }: Props) {
   }, [rating, ratingChange])
 
   function startGame() {
-    router.push("/new/game")
+    router.push("/game/new")
   }
 
   const resultText = isWin ? "You Won 🎉" : "You Lost 😢"

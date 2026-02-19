@@ -188,7 +188,7 @@ export default function Game() {
       }
     };
   }, [started, color, fen, socket, opponentName, username]);
-
+  
   function startGame() {
     setclicked(true);
     socket?.send(JSON.stringify({ type: "init_game" }));
@@ -241,7 +241,11 @@ export default function Game() {
       ratingChange={ratingChange}
     />;
   }
-
+  window.addEventListener("beforeunload",(e)=>{
+    Resignfunction({winnerName:opponentName || "",loserName:username || ""})
+    e.preventDefault()
+    e.returnValue = '';
+  })
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-black via-zinc-900 to-black text-white px-4">
       
