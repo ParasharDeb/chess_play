@@ -20,7 +20,7 @@ app.post("/signup",async(req,res)=>{
     })
     if(userExists){
         res.json({
-            message:"user already exists"
+            message:"user already exists!! Try another email"
         })
         return
     }
