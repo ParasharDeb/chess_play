@@ -2,17 +2,15 @@ FROM node:20-alpine
 
 RUN npm install -g pnpm
 
-WORKDIR /user/src/app
+WORKDIR /app
 
-COPY ./database ./database
-COPY package.json package.json
-COPY pnpm-workspace.yaml pnpm-workspace.yaml
-COPY ./express ./express
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY database ./database
+COPY express ./express
 
-RUN pnpm install 
-
-RUN cd express && pnpm run build
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter express build
 
 EXPOSE 3030
 
-CMD [ "pnpm","run","dev" ]
+CMD ["pnpm", "--filter", "express", "dev"]
