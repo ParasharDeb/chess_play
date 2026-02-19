@@ -22,4 +22,4 @@ jobs:
           context: .
           file: ./docker/dockerfile.express
           push: true
-          tags: Parashardeb/chess-app-backend:${{ github.sha }}
+          tags: parashardeb/chess-app-backend:${{ github.sha }}
