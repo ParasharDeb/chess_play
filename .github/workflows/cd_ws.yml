@@ -37,5 +37,5 @@ jobs:
           -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
           -p 8080:8080 \
           --restart=always \
-          parashardeb/chess-app-backend:${{ github.sha }}
+          parashardeb/chess-app-ws:${{ github.sha }}
           EOF
