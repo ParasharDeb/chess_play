@@ -20,7 +20,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./docker/dockerfile.express
+          file: ./docker/dockerfile.ws
           push: true
           tags: parashardeb/chess-app-ws:${{ github.sha }}
       
@@ -30,9 +30,10 @@ jobs:
           chmod 600 ~/ssh_key
 
           ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.53.54.198 << EOF
-          docker rm -f user_backend || true
+          docker rm -f user_ws || true
+          docker stop user_ws
           docker run -d \
-          --name user_backend \
+          --name user_ws \
           -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
           -p 8080:8080 \
           --restart=always \
