@@ -1,4 +1,4 @@
-name: Continuous Deployment (Prod) (Backend)
+name: Continuous Deployment (Prod) (Frontend)
 on:
   push:
     branches: [ main ]
@@ -20,10 +20,10 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./docker/dockerfile.express
+          file: ./docker/dockerfile.frontend
           push: true
-          tags: parashardeb/chess-app-backend:${{ github.sha }}
-      
+          tags: parashardeb/chess-app-frontend:${{ github.sha }}
+
       - name: Deploy to VM
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
