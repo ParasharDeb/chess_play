@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+RUN npm install -g pnpm
+
+WORKDIR /user/src/app
+ARG DATABASE_URL
+COPY ./database ./database
+COPY package.json package.json
+COPY pnpm-workspace.yaml pnpm-workspace.yaml
+COPY ./frontend ./frontend
+
+RUN pnpm install 
+
+RUN cd frontend && pnpm DATABASE_URL=${DATABASE_URL} run build
+
+EXPOSE 3000
+
+CMD [ "pnpm","run","dev" ]
