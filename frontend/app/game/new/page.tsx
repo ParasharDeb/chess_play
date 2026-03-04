@@ -3,8 +3,8 @@
 import { useSocket } from "@/hooks/useSocket";
 import { Chessboard } from "react-chessboard";
 import { useEffect, useRef, useState } from "react";
-import { Chess } from "chess.js";
-import type { PieceDropHandlerArgs } from "react-chessboard";
+import { Chess, Square } from "chess.js";
+import type { PieceDropHandlerArgs, SquareHandlerArgs } from "react-chessboard";
 import axios from "axios";
 import WinningCard from "@/components/endcomponent";
 import ChessClock from "@/components/clock";
@@ -21,6 +21,10 @@ export default function Game() {
   const [movehistory, setmovehistory] = useState([]);
   const [winner, setwinner] = useState<string | null>(null);
 
+  // --- Click-to-move state (ported from File 1) ---
+  const [moveFrom, setMoveFrom] = useState<string>("");
+  const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+
   async function getusername() {
     try {
       const base = process.env.NEXT_PUBLIC_API_URL || `http://${process.env.NEXT_PUBLIC_IP_ADDRESS}` || "";
@@ -34,7 +38,8 @@ export default function Game() {
       console.error(err);
     }
   }
-  async function Resignfunction({winnerName,loserName}:{winnerName:string,loserName:string}) {
+
+  async function Resignfunction({ winnerName, loserName }: { winnerName: string; loserName: string }) {
     socket?.send(
       JSON.stringify({
         type: "end_game",
@@ -43,12 +48,13 @@ export default function Game() {
       })
     );
   }
+
   const [fen, setFen] = useState(chessRef.current.fen());
   const [color, setColor] = useState<"white" | "black" | null>(null);
   const [started, setStarted] = useState(false);
   const [id, setid] = useState("");
   const intervalRef = useRef<number | null>(null);
-  const [whiteTime, setWhiteTime] = useState<number>(299); // keep same constants as before (blitz default ~4:59)
+  const [whiteTime, setWhiteTime] = useState<number>(299);
   const [blackTime, setBlackTime] = useState<number>(299);
 
   useEffect(() => {
@@ -57,13 +63,7 @@ export default function Game() {
 
   useEffect(() => {
     if (!socket || !username) return;
-
-    socket.send(
-      JSON.stringify({
-        type: "auth",
-        username,
-      })
-    );
+    socket.send(JSON.stringify({ type: "auth", username }));
   }, [socket, username]);
 
   useEffect(() => {
@@ -77,41 +77,34 @@ export default function Game() {
           setColor(message.color);
           setStarted(true);
           setid(message.id);
-          if (message.opponent) {
-            setOpponentName(message.opponent);
-          }
-          // set ratings if provided
-          if (typeof message.youRating === 'number') setRating(message.youRating);
-          if (typeof message.opponentRating === 'number') setOppRating(message.opponentRating);
-
-          // initialize both clocks using same constants as the old clock component logic
+          if (message.opponent) setOpponentName(message.opponent);
+          if (typeof message.youRating === "number") setRating(message.youRating);
+          if (typeof message.opponentRating === "number") setOppRating(message.opponentRating);
           const initial = 4 * 60 + 59;
           setWhiteTime(initial);
           setBlackTime(initial);
         }
 
         if (message.type === "match_ended") {
-          // If server provided rating info, use it
-          if (message.winnerName && (typeof message.winnerRating === 'number' || typeof message.loserRating === 'number')) {
+          if (message.winnerName && (typeof message.winnerRating === "number" || typeof message.loserRating === "number")) {
             const isMe = username === message.winnerName;
             const newRating = isMe ? message.winnerRating : message.loserRating;
             const rc = isMe ? message.ratingChange?.winner ?? 0 : message.ratingChange?.loser ?? 0;
-            if (typeof newRating === 'number') setRating(newRating);
+            if (typeof newRating === "number") setRating(newRating);
             setRatingChange(rc);
-            setwinner(isMe ? 'You Won 🎉' : 'You Lost 😢');
+            setwinner(isMe ? "You Won 🎉" : "You Lost 😢");
           } else {
-            setwinner('Match ended');
+            setwinner("Match ended");
           }
         }
 
         if (message.type === "opponent_move") {
           chessRef.current.load(message.fen);
           setFen(message.fen);
-          // if opponent forwarded timeRemaining, sync clocks
           if (message.move && message.move.timeRemaining) {
             const tr = message.move.timeRemaining;
-            if (typeof tr.white === 'number') setWhiteTime(tr.white);
-            if (typeof tr.black === 'number') setBlackTime(tr.black);
+            if (typeof tr.white === "number") setWhiteTime(tr.white);
+            if (typeof tr.black === "number") setBlackTime(tr.black);
           }
         }
 
@@ -120,14 +113,13 @@ export default function Game() {
         }
 
         if (message.type === "game_over") {
-          // if server included rating info for game over
-          if (message.winnerName && (typeof message.winnerRating === 'number' || typeof message.loserRating === 'number')) {
+          if (message.winnerName && (typeof message.winnerRating === "number" || typeof message.loserRating === "number")) {
             const isMe = username === message.winnerName;
             const newRating = isMe ? message.winnerRating : message.loserRating;
             const rc = isMe ? message.ratingChange?.winner ?? 0 : message.ratingChange?.loser ?? 0;
-            if (typeof newRating === 'number') setRating(newRating);
+            if (typeof newRating === "number") setRating(newRating);
             setRatingChange(rc);
-            setwinner(isMe ? 'You Won 🎉' : 'You Lost 😢');
+            setwinner(isMe ? "You Won 🎉" : "You Lost 😢");
           } else {
             setwinner(message.result);
           }
@@ -143,14 +135,13 @@ export default function Game() {
     };
   }, [socket, username]);
 
-  // manage which clock is running based on the current board turn
+  // Manage which clock is running based on the current board turn
   useEffect(() => {
     if (!started || !color) return;
 
-    const activeTurn = chessRef.current.turn(); // 'w' or 'b'
-    const isMyTurn = (color === 'white' && activeTurn === 'w') || (color === 'black' && activeTurn === 'b');
+    const activeTurn = chessRef.current.turn();
+    const isMyTurn = (color === "white" && activeTurn === "w") || (color === "black" && activeTurn === "b");
 
-    // clear existing interval
     if (intervalRef.current) {
       window.clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -158,23 +149,18 @@ export default function Game() {
 
     if (isMyTurn) {
       intervalRef.current = window.setInterval(() => {
-        if (color === 'white') {
-          setWhiteTime(prev => {
+        if (color === "white") {
+          setWhiteTime((prev) => {
             if (prev <= 0) return 0;
             const next = prev - 1;
-            if (next === 0) {
-              // time ran out, send end_game
-              socket?.send(JSON.stringify({ type: "end_game", winnerName: opponentName || "", loserName: username || "" }));
-            }
+            if (next === 0) socket?.send(JSON.stringify({ type: "end_game", winnerName: opponentName || "", loserName: username || "" }));
             return next;
           });
         } else {
-          setBlackTime(prev => {
+          setBlackTime((prev) => {
             if (prev <= 0) return 0;
             const next = prev - 1;
-            if (next === 0) {
-              socket?.send(JSON.stringify({ type: "end_game", winnerName: opponentName || "", loserName: username || "" }));
-            }
+            if (next === 0) socket?.send(JSON.stringify({ type: "end_game", winnerName: opponentName || "", loserName: username || "" }));
             return next;
           });
         }
@@ -188,42 +174,117 @@ export default function Game() {
       }
     };
   }, [started, color, fen, socket, opponentName, username]);
-  
-  function startGame() {
-    setclicked(true);
-    socket?.send(JSON.stringify({ type: "init_game" }));
-    setwinner(null);
+
+  // --- Helper: highlight valid moves for a square (ported from File 1) ---
+  function getMoveOptions(square: Square): boolean {
+    const moves = chessRef.current.moves({ square, verbose: true });
+
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return false;
+    }
+
+    const newSquares: Record<string, React.CSSProperties> = {};
+
+    for (const move of moves) {
+      const isCapture = chessRef.current.get(move.to) && chessRef.current.get(move.to)?.color !== chessRef.current.get(square)?.color;
+      newSquares[move.to] = {
+        background: isCapture
+          ? "radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)"
+          : "radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)",
+        borderRadius: "50%",
+      };
+    }
+
+    // Highlight the selected square in yellow
+    newSquares[square] = { background: "rgba(255, 255, 0, 0.4)" };
+    setOptionSquares(newSquares);
+    return true;
   }
 
-  function onDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
-    if (!started || !targetSquare) return false;
+  // --- Shared move executor: sends to server + updates local state ---
+  function executeMove(from: string, to: string): boolean {
+    if (!started) return false;
 
-    // include current remaining times so opponent can sync clocks
     socket?.send(
       JSON.stringify({
         type: "move",
         move: {
-          from: sourceSquare,
-          to: targetSquare,
-          timeRemaining: { white: whiteTime, black: blackTime }
+          from,
+          to,
+          timeRemaining: { white: whiteTime, black: blackTime },
         },
       })
     );
 
     try {
-      const result = chessRef.current.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: "q",
-      });
-
+      const result = chessRef.current.move({ from, to, promotion: "q" });
       if (!result) return false;
-
       setFen(chessRef.current.fen());
       return true;
     } catch {
       return false;
     }
+  }
+
+  // --- Click-to-move handler (ported from File 1, adapted for multiplayer) ---
+  function onSquareClick({ square, piece }: SquareHandlerArgs) {
+    if (!started) return;
+
+    // Only allow clicking your own pieces on your turn
+    const myTurn = color === "white" ? "w" : "b";
+    if (chessRef.current.turn() !== myTurn) return;
+
+    // No piece selected yet — select a piece
+    if (!moveFrom) {
+      if (!piece) return;
+      const hasMoveOptions = getMoveOptions(square as Square);
+      if (hasMoveOptions) setMoveFrom(square);
+      return;
+    }
+
+    // A piece is already selected — try to move to this square
+    const moves = chessRef.current.moves({ square: moveFrom as Square, verbose: true });
+    const foundMove = moves.find((m) => m.from === moveFrom && m.to === square);
+
+    if (!foundMove) {
+      // Clicked a different own piece — re-select it
+      const hasMoveOptions = getMoveOptions(square as Square);
+      setMoveFrom(hasMoveOptions ? square : "");
+      if (!hasMoveOptions) setOptionSquares({});
+      return;
+    }
+
+    // Valid destination — execute the move
+    const success = executeMove(moveFrom, square);
+
+    if (success) {
+      setMoveFrom("");
+      setOptionSquares({});
+    } else {
+      // Move failed unexpectedly, try re-selecting
+      const hasMoveOptions = getMoveOptions(square as Square);
+      setMoveFrom(hasMoveOptions ? square : "");
+      if (!hasMoveOptions) setOptionSquares({});
+    }
+  }
+
+  // --- Drag-and-drop handler (kept from File 2, clears click state on success) ---
+  function onDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
+    if (!started || !targetSquare) return false;
+
+    const success = executeMove(sourceSquare, targetSquare);
+    if (success) {
+      setMoveFrom("");
+      setOptionSquares({});
+    }
+    return success;
+  }
+
+  function startGame() {
+    setclicked(true);
+    socket?.send(JSON.stringify({ type: "init_game" }));
+    setwinner(null);
   }
 
   if (!socket) {
@@ -235,26 +296,22 @@ export default function Game() {
   }
 
   if (winner != null) {
-    return <WinningCard
-      winner={winner}
-      rating={rating ?? 1200}
-      ratingChange={ratingChange}
-    />;
+    return <WinningCard winner={winner} rating={rating ?? 1200} ratingChange={ratingChange} />;
   }
-  window.addEventListener("beforeunload",(e)=>{
-    Resignfunction({winnerName:opponentName || "",loserName:username || ""})
-    e.preventDefault()
-    e.returnValue = '';
-  })
+
+  window.addEventListener("beforeunload", (e) => {
+    Resignfunction({ winnerName: opponentName || "", loserName: username || "" });
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-black via-zinc-900 to-black text-white px-4">
-      
       {!started ? (
         <div className="bg-zinc-900/80 backdrop-blur-md p-10 rounded-2xl shadow-2xl border border-zinc-700 text-center">
           <h1 className="text-3xl font-bold mb-6">
             Welcome, <span className="text-emerald-400">{username}</span>
           </h1>
-
           <button
             onClick={startGame}
             className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 transition rounded-lg font-semibold text-black shadow-lg"
@@ -264,37 +321,38 @@ export default function Game() {
         </div>
       ) : (
         <div className="w-full max-w-[95vw] h-[90vh] bg-zinc-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-zinc-700 flex flex-col">
-          
           {/* Game info */}
           <div className="mb-6 text-center">
             <div className="text-sm text-zinc-400">Game ID</div>
             <div className="font-mono text-emerald-400">{id}</div>
-
             <div className="mt-2 text-sm text-zinc-400">Opponent</div>
-            <div className="font-semibold">
-              {opponentName || "Unknown player"}
-            </div>
+            <div className="font-semibold">{opponentName || "Unknown player"}</div>
             {opprating !== null && (
               <div className="mt-1 text-sm text-zinc-300">
                 Rating: <span className="text-amber-400">{opprating}</span>
               </div>
             )}
           </div>
+
           {/* Board + Sidebar */}
           <div className="flex justify-center items-start gap-6 flex-1">
-
             {/* Board column: opponent clock - board - player clock */}
             <div className="flex flex-col items-center gap-4">
               <div className="mb-2">
-                <ChessClock format="blitz" timeSeconds={color === 'white' ? blackTime : whiteTime} running={!(color === 'white' ? chessRef.current.turn() === 'w' : chessRef.current.turn() === 'b')} />
+                <ChessClock
+                  format="blitz"
+                  timeSeconds={color === "white" ? blackTime : whiteTime}
+                  running={!(color === "white" ? chessRef.current.turn() === "w" : chessRef.current.turn() === "b")}
+                />
               </div>
 
               <div className="w-[600px] shadow-2xl rounded-xl overflow-hidden">
-                
                 <Chessboard
                   options={{
                     position: fen,
                     onPieceDrop: onDrop,
+                    onSquareClick: onSquareClick,   // ← NEW: click-to-move
+                    squareStyles: optionSquares,     // ← NEW: valid move dots
                     boardOrientation: color ?? "white",
                     id: "multiplayer-board",
                   }}
@@ -302,7 +360,11 @@ export default function Game() {
               </div>
 
               <div className="mt-2">
-                <ChessClock format="blitz" timeSeconds={color === 'white' ? whiteTime : blackTime} running={(color === 'white' ? chessRef.current.turn() === 'w' : chessRef.current.turn() === 'b')} />
+                <ChessClock
+                  format="blitz"
+                  timeSeconds={color === "white" ? whiteTime : blackTime}
+                  running={color === "white" ? chessRef.current.turn() === "w" : chessRef.current.turn() === "b"}
+                />
                 {rating !== null && (
                   <div className="mt-2 text-center text-sm text-zinc-300">
                     Your Rating: <span className="text-emerald-400 font-semibold">{rating}</span>
@@ -313,37 +375,32 @@ export default function Game() {
 
             {/* Moves Sidebar */}
             <div className="bg-zinc-900 flex-1 max-w-[28rem] rounded-xl shadow-xl flex flex-col border border-zinc-700">
+              <button
+                className="bg-red-600 h-10 w-fit rounded-lg px-10 py-2 mx-15 my-5"
+                onClick={() => Resignfunction({ winnerName: opponentName || "", loserName: username || "" })}
+              >
+                Resign
+              </button>
 
-              <button className="bg-red-600 h-10 w-fit rounded-lg px-10 py-2 mx-15 my-5"
-               onClick={()=>Resignfunction({winnerName:opponentName || "",loserName:username || ""})}>
-
-                Resign</button>
               <div className="p-4 border-b border-zinc-700 bg-zinc-800">
-                <h1 className="text-lg font-semibold tracking-wide">
-                  Move History
-                </h1>
+                <h1 className="text-lg font-semibold tracking-wide">Move History</h1>
               </div>
 
               <ul className="flex-1 overflow-y-auto p-3 space-y-2 text-sm">
                 {movehistory.length === 0 ? (
-                  <p className="text-zinc-500 text-center mt-6">
-                    No moves yet
-                  </p>
+                  <p className="text-zinc-500 text-center mt-6">No moves yet</p>
                 ) : (
                   movehistory.map((move, index) => (
                     <li
                       key={index}
                       className="flex justify-between px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 transition"
                     >
-                      <span className="text-zinc-400">
-                        {index + 1}.
-                      </span>
+                      <span className="text-zinc-400">{index + 1}.</span>
                       <span className="font-medium">{move}</span>
                     </li>
                   ))
                 )}
               </ul>
-
             </div>
           </div>
         </div>
