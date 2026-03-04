@@ -20,11 +20,15 @@ export default function Game() {
   const [clicked, setclicked] = useState(false);
   const [movehistory, setmovehistory] = useState([]);
   const [winner, setwinner] = useState<string | null>(null);
-
-  // --- Click-to-move state (ported from File 1) ---
   const [moveFrom, setMoveFrom] = useState<string>("");
   const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
-
+  const [fen, setFen] = useState(chessRef.current.fen());
+  const [color, setColor] = useState<"white" | "black" | null>(null);
+  const [started, setStarted] = useState(false);
+  const [id, setid] = useState("");
+  const intervalRef = useRef<number | null>(null);
+  const [whiteTime, setWhiteTime] = useState<number>(299);
+  const [blackTime, setBlackTime] = useState<number>(299);
   async function getusername() {
     try {
       const base = process.env.NEXT_PUBLIC_API_URL || `http://${process.env.NEXT_PUBLIC_IP_ADDRESS}` || "";
@@ -38,7 +42,6 @@ export default function Game() {
       console.error(err);
     }
   }
-
   async function Resignfunction({ winnerName, loserName }: { winnerName: string; loserName: string }) {
     socket?.send(
       JSON.stringify({
@@ -48,24 +51,13 @@ export default function Game() {
       })
     );
   }
-
-  const [fen, setFen] = useState(chessRef.current.fen());
-  const [color, setColor] = useState<"white" | "black" | null>(null);
-  const [started, setStarted] = useState(false);
-  const [id, setid] = useState("");
-  const intervalRef = useRef<number | null>(null);
-  const [whiteTime, setWhiteTime] = useState<number>(299);
-  const [blackTime, setBlackTime] = useState<number>(299);
-
   useEffect(() => {
     getusername();
   }, []);
-
   useEffect(() => {
     if (!socket || !username) return;
     socket.send(JSON.stringify({ type: "auth", username }));
   }, [socket, username]);
-
   useEffect(() => {
     if (!socket) return;
 
