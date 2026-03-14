@@ -61,7 +61,7 @@ export class GameManager {
                     }
 
                     // Second player joins
-                    // if (this.waitingplayer !== socket) {
+                    if (this.waitingplayer !== socket) {
                     
                     try {
 
@@ -95,7 +95,7 @@ export class GameManager {
                     } catch (error) {
                         console.error("Game creation error:", error);
                     
-                    // }
+                    }
                 }
 
                     // return;
