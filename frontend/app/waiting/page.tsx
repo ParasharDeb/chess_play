@@ -12,10 +12,10 @@ export default function WatingPage(){
             const message = JSON.parse(event.data);
             if(message.type=="init_game"){
                 if(message.color=="white"){
-                    router.push(`/play/white/${message.id}`)
+                    router.push(`/game/play/white/${message.id}`)
                 }
                 if(message.color=="black"){
-                    router.push(`/play/black/${message.id}`)
+                    router.push(`/game/play/black/${message.id}`)
                 }
             }
         }
