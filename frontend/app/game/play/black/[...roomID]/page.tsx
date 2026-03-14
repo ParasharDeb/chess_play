@@ -1,7 +1,9 @@
+import Blackboard from "@/components/blackboard";
+
 export default function Blackplaypage(){
     return(
         <div>
-            Black player
+            <Blackboard/>
         </div>
     )
 }
