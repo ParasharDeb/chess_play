@@ -36,21 +36,22 @@ export class GameManager {
                 const message = JSON.parse(data.toString());
 
                 // ================= AUTH =================
-                if (message.type === AUTH) {
-                    if (typeof message.username === "string") {
-                        this.usernames.set(socket, message.username);
-                    }
-                    return;
-                }
+                // if (message.type === AUTH) {
+                //     if (typeof message.username === "string") {
+                //         this.usernames.set(socket, message.username);
+                //     }
+                //     return;
+                // }
 
                 // ================= INIT GAME =================
                 if (message.type === INIT_GAME) {
+                    
                     console.log("INIT_GAME received");
-
+                    
                     // First player waits
                     if (!this.waitingplayer) {
                         this.waitingplayer = socket;
-
+                        
                         socket.send(JSON.stringify({
                             type: WAITING,
                         }));
@@ -60,68 +61,48 @@ export class GameManager {
                     }
 
                     // Second player joins
-                    if (this.waitingplayer !== socket) {
-                        const player1Name = this.usernames.get(this.waitingplayer);
-                        const player2Name = this.usernames.get(socket);
+                    // if (this.waitingplayer !== socket) {
+                    
+                    try {
 
-                        if (!player1Name || !player2Name) {
-                            socket.send(JSON.stringify({type: "error", message: "Auth required"}));
-                            return;
-                        }
-
-                        // Fetch name and rating for both players
-                        const player1 = await UserModel
-                            .findOne({ name: player1Name })
-                            .select("_id name rating");
-
-                        if (!player1) {
-                            socket.send(JSON.stringify({type: "error", message: "Player1 not found"}));
-                            return;
-                        }
-
-                        const player2 = await UserModel
-                            .findOne({ name: player2Name })
-                            .select("_id name rating");
-
-                        if (!player2) {
-                            socket.send(JSON.stringify({type: "error", message: "Player2 not found"}));
-                            return;
-                        }
-
-                        // Create in-memory game
                         const gameInstance = new Game(
                             this.waitingplayer,
                             socket,
-                            player1Name,
-                            player2Name,
-                            // pass ratings if available
-                            typeof player1?.rating === 'number' ? player1.rating : undefined,
-                            typeof player2?.rating === 'number' ? player2.rating : undefined,
+                            "player1Name",
+                            "player2Name",
+                            1600,
+                            1700
                         );
-
+                        console.log("game started")
+                        
+                        
                         this.games.push(gameInstance);
 
-                        // Save to DB
-                        try {
-                            const dbGame = await GamesModel.create({
-                                whiteplayer: player1._id,
-                                blackplayer: player2._id,
-                            });
-                            console.log(player1._id)
-                            console.log(player2._id)
-                            console.log("DB Game created:", dbGame.id);
-                        } catch (error) {
-                            console.log("DB error:", error);
-                            return;
-                        }
+                        // // Save to DB
+                        // try {
+                        //     const dbGame = await GamesModel.create({
+                        //         whiteplayer: "123",
+                        //         blackplayer: "345",
+                        //     });
+
+                        //     console.log("DB Game created:", dbGame.id);
+                        // } catch (error) {
+                        //     console.log("DB error:", error);
+                        //     return;
+                        // }
 
                         this.waitingplayer = null;
-                    }
+                    } catch (error) {
+                        console.error("Game creation error:", error);
+                    
+                    // }
+                }
 
-                    return;
+                    // return;
                 }
 
                 // ================= MOVE =================
+                /*
                 if (message.type === MOVE) {
                     const game = this.games.find(
                         g => g.player1 === socket || g.player2 === socket
@@ -131,30 +112,23 @@ export class GameManager {
                         game.makeMove(socket, message.move);
                     }
                 }
-                if(message.type === ENDGAME){
-                    console.log("started ending game")
-                    const winnerName=message.winnerName
-                    const loserName=message.loserName
-                    
-                    // this is bad there probably should be an express server call where the increment and decrement is done
-                    // Better approach 
-                    // the redis should have the winner name and the loser name 
-                    // it should push from here
-                    // express gets the names and updates it
-                    // also i dont know if it will work when there are more players
-                    const game = this.games.find(
-         g => g.player1 === socket || g.player2 === socket
-                );
 
-    if (game) {
-        await game.handleResign(winnerName, loserName);
-        // Remove from games array
-        // should remove from redis after i introduce it
-        this.games = this.games.filter(g => g.id !== game.id);
-    }
+                if (message.type === ENDGAME) {
+                    console.log("started ending game")
+                    const winnerName = message.winnerName
+                    const loserName = message.loserName
                     
-                    
+                    const game = this.games.find(
+                        g => g.player1 === socket || g.player2 === socket
+                    );
+
+                    if (game) {
+                        await game.handleResign(winnerName, loserName);
+
+                        this.games = this.games.filter(g => g.id !== game.id);
+                    }
                 }
+                */
 
             } catch (err) {
                 console.log("Invalid message:", err);
