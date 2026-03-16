@@ -1,16 +1,32 @@
 'use client'
+import { useSocket } from "@/context/socketProvider";
 import { Chess } from "chess.js";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Chessboard, PieceDropHandlerArgs, PieceHandlerArgs } from "react-chessboard";
 
 export default function Blackboard(){
-    
     const chessGameRef = useRef(new Chess());
     const chessGame = chessGameRef.current;
-    
+    const socket = useSocket()
     // track the current position of the chess game in state
     const [chessPosition, setChessPosition] = useState(chessGame.fen());
-
+    useEffect(()=>{
+          if(!socket) return;
+          socket.onmessage=(event)=>{
+            const message=JSON.parse(event.data);
+            console.log(message)
+            if (message.type === "opponent_move") {
+              chessGameRef.current.load(message.fen);
+              setChessPosition(message.fen)
+              console.log(message.fen)
+            }
+            if(message.type=="match_ended"){
+              //write the function for match ending
+            }
+            
+          }
+          
+        },[])
     // handle piece drop
     function onPieceDrop({
       sourceSquare,
@@ -20,15 +36,26 @@ export default function Blackboard(){
       if (!targetSquare) {
         return false;
       }
-
+      
       // try to make the move according to chess.js logic
       try {
         chessGame.move({
           from: sourceSquare,
           to: targetSquare,
-          promotion: 'q' // always promote to a queen for example simplicity
+          promotion: 'q'
         });
-
+        console.log("sending message");
+        socket?.send(
+          JSON.stringify({
+            type: "move",
+              move: {
+              from: sourceSquare,
+              to: targetSquare,
+              timeRemaining: { white: 12, black: 10 }
+              },
+          })
+        );
+        console.log("sent message")
         // update the position state upon successful move to trigger a re-render of the chessboard
         setChessPosition(chessGame.fen());
 
@@ -54,14 +81,7 @@ export default function Blackboard(){
       return piece.pieceType[0] === 'b';
     }
 
-    // set the chessboard options for white's perspective
-    const whiteBoardOptions = {
-      canDragPiece: canDragPieceWhite,
-      position: chessPosition,
-      onPieceDrop,
-      boardOrientation: 'white' as const,
-      id: 'multiplayer-white'
-    };
+   
 
     // set the chessboard options for black's perspective
     const blackBoardOptions = {

@@ -90,7 +90,7 @@ export class Game {
             promotion?: string
         }
     ) {
-
+        console.log("reached here")
         // check if it is the player's move 
         if ((this.board.turn() == 'w' && socket !== this.player1) ||
             (this.board.turn() == 'b' && socket !== this.player2)
@@ -98,7 +98,7 @@ export class Game {
             socket.send(JSON.stringify({ type: "error", message: "Not your turn" }));
             return;
         }
-
+        console.log(move)
         // is the move valid (chess.js returns null for invalid moves)
         try {
             const result = this.board.move(move);

@@ -1,16 +1,30 @@
 'use client'
+import { useSocket } from "@/context/socketProvider";
 import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
 import { Chessboard, PieceDropHandlerArgs, PieceHandlerArgs } from "react-chessboard";
 
 export default function WhiteBoard(){
-    const chessRef = useRef(new Chess());
-    const [fen, setFen] = useState(chessRef.current.fen());
-
     const chessGameRef = useRef(new Chess());
     const chessGame = chessGameRef.current;
     const [chessPosition, setChessPosition] = useState(chessGame.fen());
-
+    const socket=useSocket()
+    useEffect(()=>{
+      if(!socket) return;
+      socket.onmessage=(event)=>{
+        const message=JSON.parse(event.data);
+        console.log(message)
+        if (message.type === "opponent_move") {
+          chessGameRef.current.load(message.fen);
+          setChessPosition(message.fen)
+        }
+        if(message.type=="match_ended"){
+          //write the function for match ending
+        }
+        
+      }
+      
+    },[])
     // handle piece drop
     function onPieceDrop({
       sourceSquare,
@@ -20,7 +34,7 @@ export default function WhiteBoard(){
       if (!targetSquare) {
         return false;
       }
-
+      console.log("reacher onpiecedrop function")
       // try to make the move according to chess.js logic
       try {
         chessGame.move({
@@ -28,10 +42,21 @@ export default function WhiteBoard(){
           to: targetSquare,
           promotion: 'q' // always promote to a queen for example simplicity
         });
-
+        console.log("sending message");
+        socket?.send(
+          JSON.stringify({
+            type: "move",
+              move: {
+              from: sourceSquare,
+              to: targetSquare,
+              timeRemaining: { white: 12, black: 10 }
+              },
+          })
+        );
+        console.log("sent message")
         // update the position state upon successful move to trigger a re-render of the chessboard
         setChessPosition(chessGame.fen());
-
+      
         // return true as the move was successful
         return true;
       } catch {
@@ -39,7 +64,6 @@ export default function WhiteBoard(){
         return false;
       }
     }
-
     // allow white to only drag white pieces
     function canDragPieceWhite({
       piece
@@ -64,13 +88,7 @@ export default function WhiteBoard(){
     };
 
     // set the chessboard options for black's perspective
-    const blackBoardOptions = {
-      canDragPiece: canDragPieceBlack,
-      position: chessPosition,
-      onPieceDrop,
-      boardOrientation: 'black' as const,
-      id: 'multiplayer-black'
-    };
+    
 
     // render both chessboards side by side with a gap
     return <div style={{

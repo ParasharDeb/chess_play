@@ -102,7 +102,7 @@ export class GameManager {
                 }
 
                 // ================= MOVE =================
-                /*
+                
                 if (message.type === MOVE) {
                     const game = this.games.find(
                         g => g.player1 === socket || g.player2 === socket
@@ -128,7 +128,7 @@ export class GameManager {
                         this.games = this.games.filter(g => g.id !== game.id);
                     }
                 }
-                */
+                
 
             } catch (err) {
                 console.log("Invalid message:", err);

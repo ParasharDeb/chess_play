@@ -179,7 +179,7 @@ export default function ChessLandingPage() {
       <section className="py-24 text-center">
         <h2 className="text-5xl font-bold mb-6">Ready to Play?</h2>
         <a
-          href={hasToken ? "/game/new" : "/signup"}
+          href={hasToken ? "/game" : "/signup"}
           className="px-12 py-5 bg-white text-black font-bold rounded-lg"
         >
           Get Started
