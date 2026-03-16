@@ -1,9 +1,10 @@
+import { useRouter } from "next/navigation";
 const NAV_ITEMS = [
-  { icon: "♟", label: "Play",    active: true  },
-  { icon: "⚔", label: "Puzzles", active: false },
-  { icon: "📈", label: "Stats",  active: false },
-  { icon: "👥", label: "Friends",active: false },
-  { icon: "⚙", label: "Settings",active: false},
+  { icon: "♟", label: "Play",    active: true,path:"/game" },
+  { icon: "⚔", label: "Computer", active: false ,path:"/computer"},
+  { icon: "📈", label: "Stats",  active: false ,path:"/stats"},
+  { icon: "👥", label: "Friends",active: false ,path:"/friends"},
+  { icon: "⚙", label: "Settings",active: false,path:"/settings"},
 ];
 
 const navStyles = `
@@ -94,6 +95,7 @@ const navStyles = `
 `;
 
 export default function Navbar() {
+  const router=useRouter()
   return (
     <>
       <style>{navStyles}</style>
@@ -106,6 +108,7 @@ export default function Navbar() {
               key={item.label}
               className={`gl-nav-item${item.active ? ' active' : ''}`}
               title={item.label}
+              onClick={()=>{router.push(item.path)}}
             >
               <span className="gl-nav-icon">{item.icon}</span>
               <span className="gl-nav-label">{item.label}</span>
