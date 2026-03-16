@@ -4,7 +4,7 @@ import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
 import { Chessboard, PieceDropHandlerArgs, PieceHandlerArgs } from "react-chessboard";
 import { boardStyles } from "./boardStyles";
-
+import { useRouter } from "next/navigation";
 /* ─────────────────────── move pair helpers ─────────────────────── */
 function pairMoves(history: string[]) {
   const pairs: [string, string | null, number][] = [];
@@ -19,6 +19,7 @@ export default function Blackboard(){
     const chessGameRef = useRef(new Chess());
     const chessGame = chessGameRef.current;
     const socket = useSocket()
+    const router=useRouter()
     // track the current position of the chess game in state
     const [chessPosition, setChessPosition] = useState(chessGame.fen());
     const [moves, setMoves] = useState<string[]>([]);
@@ -45,7 +46,7 @@ export default function Blackboard(){
               setMoves(message.history);
             }
             if(message.type=="match_ended"){
-              //write the function for match ending
+              router.push("/endgame")
             }
             
           }
@@ -96,6 +97,15 @@ export default function Blackboard(){
       piece
     }: PieceHandlerArgs) {
       return piece.pieceType[0] === 'w';
+    }
+
+    // handle resign
+    function handleResign() {
+      socket?.send(
+        JSON.stringify({
+          type: "end_game",
+        })
+      );
     }
 
     // allow black to only drag black pieces
@@ -159,7 +169,14 @@ export default function Blackboard(){
             <div className="cb-history-header">
               <p className="cb-history-title">Move History</p>
               <p className="cb-history-subtitle">{moves.length} half-move{moves.length !== 1 ? 's' : ''} played</p>
+              <button 
+              onClick={handleResign}
+              className="w-full px-4 mt-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors m-2 cursor-pointer"
+            >
+              Resign Match
+            </button>
             </div>
+            
 
             <div className="cb-history-body" ref={historyBodyRef}>
               {movePairs.length === 0 ? (

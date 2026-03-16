@@ -4,7 +4,7 @@ import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
 import { Chessboard, PieceDropHandlerArgs, PieceHandlerArgs } from "react-chessboard";
 import { boardStyles } from "./boardStyles";
-
+import { useRouter } from "next/navigation";
 /* ─────────────────────── move pair helpers ─────────────────────── */
 function pairMoves(history: string[]) {
   const pairs: [string, string | null, number][] = [];
@@ -22,7 +22,7 @@ export default function WhiteBoard() {
   const [moves, setmoves] = useState<string[]>([]);
   const socket = useSocket();
   const historyBodyRef = useRef<HTMLDivElement>(null);
-
+  const router=useRouter()
   /* ── auto-scroll history on new move ── */
   useEffect(() => {
     if (historyBodyRef.current) {
@@ -43,7 +43,7 @@ export default function WhiteBoard() {
         setmoves(message.history);
       }
       if (message.type === "match_ended") {
-        // write the function for match ending
+        router.push("/endgame")
       }
     };
   }, []);
@@ -74,6 +74,14 @@ export default function WhiteBoard() {
     } catch {
       return false;
     }
+  }
+
+  function handleResign() {
+    socket?.send(
+      JSON.stringify({
+        type: "end_game",
+      })
+    );
   }
 
   function canDragPieceWhite({ piece }: PieceHandlerArgs) {
@@ -137,7 +145,14 @@ export default function WhiteBoard() {
             <div className="cb-history-header">
               <p className="cb-history-title">Move History</p>
               <p className="cb-history-subtitle">{moves.length} half-move{moves.length !== 1 ? 's' : ''} played</p>
+              <button 
+              onClick={handleResign}
+              className="w-full px-4 py-10 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors m-2 cursor-pointer"
+            >
+              Resign Match
+            </button>
             </div>
+            
 
             <div className="cb-history-body" ref={historyBodyRef}>
               {movePairs.length === 0 ? (
