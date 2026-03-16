@@ -133,8 +133,24 @@ export default function Blackboard(){
               <span />
               Live Match · You are Black
             </div>
+            <div className="flex gap-3">
+              <div className="bg-white h-12 w-12 rounded-lg">
+                  hello
+              </div>
+              <div>
+                OPPONENT NAME(RATING)
+              </div>
+            </div>
             <div className="cb-board-wrap">
               <Chessboard options={blackBoardOptions} />
+            </div>
+            <div className="flex gap-3">
+              <div className="bg-white h-12 w-12 rounded-lg">
+                  hello
+              </div>
+              <div>
+                OPPONENT NAME(RATING)
+              </div>
             </div>
           </div>
 

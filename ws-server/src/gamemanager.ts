@@ -35,13 +35,13 @@ export class GameManager {
             try {
                 const message = JSON.parse(data.toString());
 
-                // ================= AUTH =================
-                // if (message.type === AUTH) {
-                //     if (typeof message.username === "string") {
-                //         this.usernames.set(socket, message.username);
-                //     }
-                //     return;
-                // }
+                //================= AUTH =================
+                if (message.type === AUTH) {
+                    if (typeof message.username === "string") {
+                        this.usernames.set(socket, message.username);
+                    }
+                    return;
+                }
 
                 // ================= INIT GAME =================
                 if (message.type === INIT_GAME) {

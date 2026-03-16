@@ -111,8 +111,24 @@ export default function WhiteBoard() {
               <span />
               Live Match · You are White
             </div>
+            <div className="flex gap-3">
+              <div className="bg-white h-12 w-12 rounded-lg">
+                  hello
+              </div>
+              <div>
+                OPPONENT NAME(RATING)
+              </div>
+            </div>
             <div className="cb-board-wrap">
               <Chessboard options={whiteBoardOptions} />
+            </div>
+            <div className="flex gap-3">
+              <div className="bg-white h-12 w-12 rounded-lg">
+                  hello
+              </div>
+              <div>
+                YOUR NAME(RATING)
+              </div>
             </div>
           </div>
 
