@@ -122,7 +122,7 @@ export default function ChessLandingPage() {
           <div className="flex items-center justify-center w-full gap-10">
           <motion.div variants={itemVariants} className="flex gap-4 justify-center">
             <a
-              href={hasToken ? "/game/new" : "/signup"}
+              href={hasToken ? "/game" : "/signup"}
               className="px-8 py-4 bg-white text-black font-semibold rounded-lg"
             >
               {hasToken ? "Start Playing" : "Start Free"}
