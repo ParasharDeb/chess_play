@@ -281,7 +281,7 @@ export default function SigninPage() {
       });
       setLoading(false);
       localStorage.setItem("token", res.data.token);
-      router.push("/game/new");
+      router.push("/game");
     } catch (error) {
       console.log(error);
       setLoading(false);
