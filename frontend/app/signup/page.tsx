@@ -341,7 +341,7 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_IP_ADDRESS}/signup`, {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_IP_ADDRESS}signup`, {
         username,
         password,
         email,
