@@ -4,8 +4,9 @@ import { Chess } from "chess.js";
 import { useEffect, useRef, useState } from "react";
 import { Chessboard, PieceDropHandlerArgs, PieceHandlerArgs } from "react-chessboard";
 import { boardStyles } from "./boardStyles";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import ChessClock from "./clock";
+import axios from "axios";
 
 type Player = 'white' | 'black';
 
@@ -16,12 +17,87 @@ interface ClockState {
   lastMoveTimestamp: number;
 }
 
+interface PlayerInfo {
+  name: string;
+  rating: number;
+}
+
 function pairMoves(history: string[]) {
   const pairs: [string, string | null, number][] = [];
   for (let i = 0; i < history.length; i += 2) {
     pairs.push([history[i], history[i + 1] ?? null, Math.floor(i / 2) + 1]);
   }
   return pairs;
+}
+
+/* ── Player card ──────────────────────────────────────────────── */
+function PlayerCard({
+  name,
+  rating,
+  icon,
+  isYou,
+}: {
+  name: string;
+  rating?: number;
+  icon: string;
+  isYou: boolean;
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 8,
+          background: isYou ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 22,
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </div>
+      <div>
+        <p
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontWeight: 500,
+            color: '#fff',
+            fontSize: 14,
+            lineHeight: 1.3,
+          }}
+        >
+          {name}
+          {isYou && (
+            <span
+              style={{
+                marginLeft: 6,
+                fontSize: 10,
+                fontFamily: "'DM Mono', monospace",
+                color: 'rgba(255,255,255,0.4)',
+                letterSpacing: '0.05em',
+              }}
+            >
+              (you)
+            </span>
+          )}
+        </p>
+        <p
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 11,
+            color: 'rgba(255,255,255,0.4)',
+            marginTop: 1,
+          }}
+        >
+          {rating !== undefined ? `${rating} ELO` : '— ELO'}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function BlackBoard() {
@@ -31,21 +107,52 @@ export default function BlackBoard() {
   const socket = useSocket();
   const router = useRouter();
   const historyBodyRef = useRef<HTMLDivElement>(null);
+  const params = useParams();
+
+  // Extract gameId from [...roomID] catchall param
+  const gameId = Array.isArray(params?.roomID)
+    ? params.roomID[0]
+    : (params?.roomID as string | undefined) ?? "";
 
   const [clock, setClock] = useState<ClockState | null>(null);
   const [serverOffset, setServerOffset] = useState(0);
+  const [myInfo, setMyInfo] = useState<PlayerInfo | null>(null);
+  const [opponentName, setOpponentName] = useState<string>("Opponent");
+  const historyRequestedRef = useRef(false);
 
+  /* ── auto-scroll move history ── */
   useEffect(() => {
     if (historyBodyRef.current) {
       historyBodyRef.current.scrollTop = historyBodyRef.current.scrollHeight;
     }
   }, [moves]);
 
+  /* ── fetch own user info from Express ── */
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    axios
+      .get(`http://${process.env.NEXT_PUBLIC_IP_ADDRESS}/getuser`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setMyInfo(res.data))
+      .catch((err) => console.error("[BlackBoard] Failed to fetch user info:", err));
+  }, []);
+
+  /* ── request move history from WS on connect ── */
+  useEffect(() => {
+    if (!socket || !gameId || historyRequestedRef.current) return;
+    historyRequestedRef.current = true;
+    socket.send(JSON.stringify({ type: "get_history", gameId }));
+  }, [socket, gameId]);
+
+  /* ── WS message handler ── */
   useEffect(() => {
     if (!socket) return;
 
     const handler = (event: MessageEvent) => {
       const message = JSON.parse(event.data);
+      console.log("[BlackBoard] msg:", message.type, message);
 
       if (message.type === "clock_update") {
         setClock(message.clock);
@@ -53,19 +160,32 @@ export default function BlackBoard() {
       }
 
       if (message.type === "opponent_move") {
-        chessGameRef.current.load(message.fen);
+        // Use chess.move() instead of chess.load() so we can grab the SAN
+        // and append it to our in-memory list without losing history.
+        const result = chessGameRef.current.move(message.move);
+        if (result) {
+          setMoves((prev) => [...prev, result.san]);
+        } else {
+          // Fallback: sync position from authoritative FEN
+          chessGameRef.current.load(message.fen);
+        }
         setChessPosition(message.fen);
-        setMoves(chessGameRef.current.history());
       }
 
+      /* move_history: bootstrap the full in-memory array from Redis SANs */
       if (message.type === "move_history") {
+        if (message.opponentName) setOpponentName(message.opponentName);
         const tempGame = new Chess();
-        for (const move of message.history) {
-          tempGame.move(move);
+        const sanList: string[] = [];
+        for (const san of (message.history as string[])) {
+          try {
+            const r = tempGame.move(san);
+            if (r) sanList.push(r.san);
+          } catch { /* skip invalid */ }
         }
         chessGameRef.current = tempGame;
         setChessPosition(tempGame.fen());
-        setMoves(message.history);
+        setMoves(sanList);   // explicit array — source of truth
       }
 
       if (message.type === "game_over") {
@@ -75,7 +195,7 @@ export default function BlackBoard() {
 
     socket.addEventListener("message", handler);
     return () => socket.removeEventListener("message", handler);
-  }, [socket]);
+  }, [socket, router]);
 
   function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
     if (!targetSquare) return false;
@@ -89,7 +209,8 @@ export default function BlackBoard() {
 
       if (!result) return false;
 
-      setMoves(chessGameRef.current.history());
+      // Append just this move's SAN to the in-memory array
+      setMoves((prev) => [...prev, result.san]);
       setChessPosition(chessGameRef.current.fen());
 
       socket?.send(JSON.stringify({
@@ -137,12 +258,13 @@ export default function BlackBoard() {
               Live Match · You are Black
             </div>
 
-            {/* Opponent (White) — white clock sits here */}
-            <div className="flex gap-3 items-center">
-              <div className="bg-white h-12 w-12 rounded-lg">hello</div>
-              <div>OPPONENT NAME(RATING)</div>
+            {/* Opponent (White) above the board */}
+            <div className="flex gap-3 items-center" style={{ marginBottom: 4 }}>
+              <PlayerCard name={opponentName} icon="♔" isYou={false} />
               {clock && (
-                <ChessClock clock={clock} serverTimeOffset={serverOffset} player="white" />
+                <div style={{ marginLeft: 'auto' }}>
+                  <ChessClock clock={clock} serverTimeOffset={serverOffset} player="white" />
+                </div>
               )}
             </div>
 
@@ -150,12 +272,18 @@ export default function BlackBoard() {
               <Chessboard options={blackBoardOptions} />
             </div>
 
-            {/* You (Black) — black clock sits here */}
-            <div className="flex gap-3 items-center">
-              <div className="bg-white h-12 w-12 rounded-lg">hello</div>
-              <div>YOUR NAME(RATING)</div>
+            {/* You (Black) below the board */}
+            <div className="flex gap-3 items-center" style={{ marginTop: 4 }}>
+              <PlayerCard
+                name={myInfo?.name ?? "You"}
+                rating={myInfo?.rating}
+                icon="♛"
+                isYou
+              />
               {clock && (
-                <ChessClock clock={clock} serverTimeOffset={serverOffset} player="black" />
+                <div style={{ marginLeft: 'auto' }}>
+                  <ChessClock clock={clock} serverTimeOffset={serverOffset} player="black" />
+                </div>
               )}
             </div>
           </div>
