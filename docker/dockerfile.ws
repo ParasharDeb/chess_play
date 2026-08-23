@@ -14,4 +14,4 @@ RUN pnpm --filter express build
 
 EXPOSE 8080
 
-CMD ["pnpm", "--filter", "express", "dev"]
+CMD ["pnpm", "--filter", "ws-server", "dev"]
