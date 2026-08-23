@@ -275,7 +275,7 @@ export default function SigninPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(`http://${process.env.NEXT_PUBLIC_IP_ADDRESS}/signin`, {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_IP_ADDRESS}/signin`, {
         email,
         password,
       });
