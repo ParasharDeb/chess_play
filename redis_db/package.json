@@ -1,0 +1,21 @@
+{
+  "name": "@repo/redis-db",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "ioredis": "^6.0.0"
+  }
+}

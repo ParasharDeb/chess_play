@@ -1,0 +1,10 @@
+# Chess Play - Development Docker Compose Configuration
+# 
+# This setup is optimized for local development with hot reload
+# Services: Express Backend, WebSocket Server, Frontend, MongoDB
+#
+# Usage:
+#   docker-compose -f dockerdev-compose.yml up --build
+#   docker-compose -f dockerdev-compose.yml down
+#
+

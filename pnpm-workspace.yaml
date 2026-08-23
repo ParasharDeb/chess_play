@@ -1,0 +1,6 @@
+packages:
+  - "frontend"
+  - "ws-server"
+  - "express"
+  - "database"
+  - "redis_db"

@@ -1,0 +1,41 @@
+name: Continuous Deployment (Prod) (Websocket)
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      
+      - name: Docker login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/dockerfile.ws
+          push: true
+          tags: parashardeb/chess-app-ws:${{ github.sha }}
+      
+      - name: Deploy to VM
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
+
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.53.54.198 << EOF
+          docker stop user_ws
+          docker rm -f user_ws || true
+          docker run -d \
+          --name user_ws \
+          -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+          -p 8080:8080 \
+          --restart=always \
+          parashardeb/chess-app-ws:${{ github.sha }}
+          EOF
