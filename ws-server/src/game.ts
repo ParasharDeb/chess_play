@@ -13,6 +13,8 @@ import {
 export class Game {
   public player1: WebSocket;           // white
   public player2: WebSocket;           // black
+  public player1Name: string;
+  public player2Name: string;
   public board: Chess;
   public id: string;
   public whiteTime: number;
@@ -37,6 +39,8 @@ export class Game {
   ) {
     this.player1 = p1;
     this.player2 = p2;
+    this.player1Name = p1Name;
+    this.player2Name = p2Name;
     this.board = existingFen ? new Chess(existingFen) : new Chess();
     this.id = existingId ?? randomUUID();
 
@@ -56,6 +60,7 @@ export class Game {
         type: INIT_GAME,
         color: "white",
         id: this.id,
+        opponentName: p2Name,
       })
     );
 
@@ -64,6 +69,7 @@ export class Game {
         type: INIT_GAME,
         color: "black",
         id: this.id,
+        opponentName: p1Name,
       })
     );
 

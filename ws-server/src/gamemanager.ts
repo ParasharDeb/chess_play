@@ -8,6 +8,7 @@ import {
   ENDGAME,
   RECONNECT,
   RECONNECT_SUCCESS,
+  GET_HISTORY,
 } from "./message";
 import {
   loadGameState,
@@ -216,6 +217,32 @@ export class GameManager {
 
           this.waitingPlayer = null;
         }
+        return;
+      }
+
+      // ── GET_HISTORY ────────────────────────────────────────────────────────
+      // Client sends: { type: "get_history" }
+      // Server responds with SANs from Redis + opponent name
+      if (message.type === GET_HISTORY) {
+        const game = this.socketToGame.get(socket);
+        if (!game) {
+          socket.send(JSON.stringify({ type: "move_history", history: [], opponentName: "Opponent" }));
+          return;
+        }
+
+        const moves = await loadMoves(game.id);
+        const history = moves.map((m) => m.san);
+
+        const opponentSocket = game.player1 === socket ? game.player2 : game.player1;
+        const opponentName = this.usernames.get(opponentSocket) ?? "Opponent";
+
+        socket.send(
+          JSON.stringify({
+            type: "move_history",
+            history,
+            opponentName,
+          })
+        );
         return;
       }
 

@@ -7,3 +7,4 @@ export const CLOCK_UPDATE = "clock_update";
 export const GAME_OVER = "game_over";
 export const RECONNECT = "reconnect";
 export const RECONNECT_SUCCESS = "reconnect_success";
+export const GET_HISTORY = "get_history";
